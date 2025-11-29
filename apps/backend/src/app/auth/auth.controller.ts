@@ -1,6 +1,6 @@
-import { Body, Controller, Post, UnauthorizedException } from "@nestjs/common";
-import { CreateLoginDto } from "./dto/createLogin.dto";
-import { CreateUserDto } from "./dto/createUser.dto";
+import { Body, Controller, HttpException, HttpStatus, Post } from "@nestjs/common";
+import { CreateLoginDto } from "../models/dto/login.dto";
+import { CreateUserDto } from "../models/dto/createUser.dto";
 import { AuthService } from "./auth.service";
 
 @Controller('auth')
@@ -11,17 +11,19 @@ export class AuthController{
 
     @Post('login')
     async login(@Body() login:CreateLoginDto){
-        const jwt_token = this.authService.login(login.username,login.password)
+        const jwt_token = await this.authService.login(login.username,login.password)
         if(!jwt_token){
-            throw UnauthorizedException
+            throw new HttpException('Wrong password or username',HttpStatus.UNAUTHORIZED)
         }
         return jwt_token
     }
 
-    @Post('register')
+    @Post('register/user')
     async createNewUser(@Body() user:CreateUserDto){
-
+        this.authService.signin(user);
+        return
     }
+
 
 
 }

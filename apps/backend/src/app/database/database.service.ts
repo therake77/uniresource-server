@@ -1,37 +1,47 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { EntityTarget, ObjectLiteral, Repository } from "typeorm/browser";
-import { DataSource } from "typeorm/browser";
-import { User } from "./models/user";
+import { EntityTarget, ObjectLiteral, Repository } from "typeorm";
+import { DataSource } from "typeorm";
+import { UserEntity } from "./models/database.user";
+import { User } from "../models/common/user";
+import { CreateUserDto } from "../models/dto/createUser.dto";
+import { Role } from "../models/common/roles";
+import { Permit } from "../models/common/permits";
 
 @Injectable()
 export class DatabaseService{
     constructor(
         @InjectDataSource()
         private readonly dataSource:DataSource,
-        @InjectRepository(User)
-        private readonly userRepository:Repository<User>
+        @InjectRepository(UserEntity)
+        private readonly userRepository:Repository<UserEntity>
     ){}
 
-    async findUserWithPassword(username:string,password:string){
-        const user:User|null = await this.userRepository.findOneBy({username,password})
+    async findUserWithPassword(usrname:string,passwrd:string):Promise<User|null>{
+        const user:UserEntity|null = await this.userRepository.findOneBy({
+            username: usrname,
+            password : passwrd
+        })
+
         if(!user){
             return null
         }
-        return {
-            username : user.username,
-            email: user.email,
-            password: user.password,
-        }
+        let foundUser = new User();
+        Object.assign(foundUser,user)
+        return foundUser
     }
 
+    saveUser(user:CreateUserDto,role:Role,permits:Permit){
+        let newUser = this.userRepository.create(user);
+        this.userRepository.save([newUser])
+    }
 
     getRespository<T extends ObjectLiteral> (entity: EntityTarget<T>): Repository<T> {
         return this.dataSource.getRepository(entity);    
     }
 
     query(sql:string, params?: any[]){
-
+        return
     }
 
 }

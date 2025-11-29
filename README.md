@@ -14,6 +14,6 @@ Nota: requiere que tengas una instancia de PostgresSQL local con usuario postgre
 Docker production mode:
 - `docker compose build`
 - `docker compose run`
-
+Nota importante: Cualquier servicio local de PostgreSQL usando el puerto 5432 debe ser detenido o causará un error
 ### Notas:
 - La configuración del servicio `Docker.dev` aún está pendiente (modo testeo en Docker)

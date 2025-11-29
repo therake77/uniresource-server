@@ -1,22 +1,27 @@
 import { Module } from "@nestjs/common";
 import { AuthController } from "./auth.controller";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { User } from "../database/models/user";
 import { AuthService } from "./auth.service";
 import { DatabaseModule } from "../database/database.module";
 import { JwtModule } from "@nestjs/jwt";
-import { jwt_secret } from "./auth.constants";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 
 @Module({
-    imports:[TypeOrmModule.forFeature([User]),DatabaseModule,
-        JwtModule.register({
-            global:true,
-            secret:jwt_secret.secret,
-            signOptions:{
-                expiresIn:'60s'
-            }
-        })],
+    imports:[ConfigModule,DatabaseModule,
+        JwtModule.registerAsync({
+            imports:[ConfigModule],
+            inject:[ConfigService],
+            useFactory: async (config:ConfigService) => ({
+                global:true,
+                secret: config.get<string>('JWT_SECRET_KEY'),
+                signOptions:{
+                    expiresIn:'1h'
+                }
+            })
+            
+        })
+    ],
     controllers:[AuthController],
     providers:[AuthService],
+    exports:[AuthService]
 })
 export class AuthModule{}

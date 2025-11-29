@@ -4,5 +4,5 @@ export class CreateLoginDto{
     @IsNotEmpty()
     username:string;
     @IsNotEmpty()
-    password:string; 
+    password:string;
 }
