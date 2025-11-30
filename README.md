@@ -1,12 +1,12 @@
 ### Requisitos:
-- Node.js
+- Node.js 
 - npm
 - Nx
 - Docker
 
 ### Ejecución:
 Testeo rápido del backend:
-- `docker compose -f docker-compose-dev.yml up --build` para iniciar la base de datos dockerizada
+- `docker compose -f docker-compose-dev.yml up --build` para iniciar la base de datos dockerizada (puerto 5433)
 - `nx serve backend`: inicia el servidor (localhost:3000)
 
 Testeo del frontend
@@ -16,6 +16,6 @@ Docker production mode (aún no está del todo probado):
 - `docker compose build`
 - `docker compose run`
 
-### Notas:
-- Nota importante: Cualquier servicio local de PostgreSQL usando el puerto 5432 debe ser detenido o causará un error
-- La configuración del servicio `Docker.dev` aún está pendiente (modo testeo en Docker)
+### Notas
+- Falta desarrollar el frontend
+- Si estan en Windows, usen nvm-windows para Node y npm

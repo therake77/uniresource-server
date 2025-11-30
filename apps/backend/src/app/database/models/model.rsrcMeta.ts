@@ -1,5 +1,6 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { ResourceEntity } from "./model.rsrcEnt";
+import { Type } from "class-transformer";
 
 @Entity()
 export class ResourceMetadataEntity{
@@ -13,10 +14,15 @@ export class ResourceMetadataEntity{
     type:string;
 
     @Column()
+    @Type(()=>Date)
     publish_date:Date;
     
     @Column()
+    @Type(()=>Date)
     upload_date:Date;
+
+    @Column()
+    course:string;
     
     @Column({nullable:true})
     semester:number;

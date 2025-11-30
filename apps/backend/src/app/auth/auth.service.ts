@@ -19,12 +19,16 @@ export class AuthService{
             return null
         }
         const jwtToken = this.jwtService.sign({
+            sub: user.id,
             username: user.username,
-            email: user.email
         })
         return jwtToken;
     }
 
+    async getUser(id:number){
+        const user = await this.databaseService.findUserById(id);
+        return user
+    }
 
     async registerNewUser(newUser:CreateUserDto){
         const userRole = Role.createUserRole()
