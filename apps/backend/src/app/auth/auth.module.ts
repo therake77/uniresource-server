@@ -4,6 +4,10 @@ import { AuthService } from "./auth.service";
 import { DatabaseModule } from "../database/database.module";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { LocalGuard } from "./guards/local.guard";
+import { LocalStrategy } from "./strategies/local.strategy";
+import { JwtGuard } from "./guards/jwt.guard";
+import { JwtStrategy } from "./strategies/jwt.strategy";
 
 @Module({
     imports:[ConfigModule,DatabaseModule,
@@ -21,7 +25,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
         })
     ],
     controllers:[AuthController],
-    providers:[AuthService],
-    exports:[AuthService]
+    providers:[AuthService,LocalGuard,LocalStrategy,JwtGuard,JwtStrategy],
+    exports:[AuthService,JwtGuard]
 })
 export class AuthModule{}

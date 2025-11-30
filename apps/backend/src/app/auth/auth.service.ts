@@ -13,19 +13,20 @@ export class AuthService{
     ){}
 
     
-    async login(username:string,password:string){
+    async validateUser(username:string,password:string){
         const user = await this.databaseService.findUserWithPassword(username,password)
         if(!user){
             return null
         }
-        const jwtSignature = this.jwtService.sign({
+        const jwtToken = this.jwtService.sign({
             username: user.username,
-            email : user.email
+            email: user.email
         })
-        return jwtSignature
+        return jwtToken;
     }
 
-    async signin(newUser:CreateUserDto){
+
+    async registerNewUser(newUser:CreateUserDto){
         const userRole = Role.createUserRole()
         const userPermit = new UserPermit()
         this.databaseService.saveUser(newUser,userRole,userPermit);

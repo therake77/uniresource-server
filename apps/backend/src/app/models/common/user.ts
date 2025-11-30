@@ -31,7 +31,7 @@ export class Colaborator extends User{
 }
 
 
-//serialized object
+//serialized object(probably will be removed)
 export class SerializedUser{
 
 }

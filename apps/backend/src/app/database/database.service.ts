@@ -41,6 +41,7 @@ export class DatabaseService{
     }
 
     query(sql:string, params?: any[]){
+        //TODO(possible not necessary and will be removed)
         return
     }
 

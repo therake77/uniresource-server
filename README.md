@@ -2,18 +2,20 @@
 - Node.js
 - npm
 - Nx
-- Docker (aún en proceso)
+- Docker
 
 ### Ejecución:
-Testeo rápido:
-- `nx serve backend`: inicia el servidor
-- `nx serve frontend`: inicia el frontend (por el momento es una página en blanco)
+Testeo rápido del backend:
+- `docker compose -f docker-compose-dev.yml up --build` para iniciar la base de datos dockerizada
+- `nx serve backend`: inicia el servidor (localhost:3000)
 
-Nota: requiere que tengas una instancia de PostgresSQL local con usuario postgres, contraseña postgres
+Testeo del frontend
+- `nx serve frontend`: inicia el frontend (por el momento es una página en blanco)
 
 Docker production mode:
 - `docker compose build`
 - `docker compose run`
-Nota importante: Cualquier servicio local de PostgreSQL usando el puerto 5432 debe ser detenido o causará un error
+
 ### Notas:
+- Nota importante: Cualquier servicio local de PostgreSQL usando el puerto 5432 debe ser detenido o causará un error
 - La configuración del servicio `Docker.dev` aún está pendiente (modo testeo en Docker)
