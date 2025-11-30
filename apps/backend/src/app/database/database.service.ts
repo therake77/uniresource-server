@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { EntityTarget, ObjectLiteral, Repository } from "typeorm";
 import { DataSource } from "typeorm";
-import { UserEntity } from "./models/database.user";
+import { UserEntity } from "./models/model.user";
 import { User } from "../models/common/user";
 import { CreateUserDto } from "../models/dto/createUser.dto";
 import { Role } from "../models/common/roles";

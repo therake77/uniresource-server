@@ -12,7 +12,7 @@ Testeo rápido del backend:
 Testeo del frontend
 - `nx serve frontend`: inicia el frontend (por el momento es una página en blanco)
 
-Docker production mode:
+Docker production mode (aún no está del todo probado):
 - `docker compose build`
 - `docker compose run`
 

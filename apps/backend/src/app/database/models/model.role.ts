@@ -1,0 +1,21 @@
+import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { PermitEntity } from "./model.permit";
+import { UserEntity } from "./model.user";
+
+@Entity('role')
+export class RoleEntity{
+    @PrimaryGeneratedColumn()
+    role_id:number;
+
+    @Column()
+    role_name:string;
+    
+    @Column({type:'text'})
+    description:string;
+
+    @OneToMany(()=>PermitEntity, (permit:PermitEntity) => (permit.role))
+    permitsAllowed: PermitEntity[];
+
+    @ManyToMany(()=>UserEntity,(user)=>(user.roles))
+    users:UserEntity[];
+}
