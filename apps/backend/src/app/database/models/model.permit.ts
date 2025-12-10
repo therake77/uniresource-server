@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { RoleEntity } from "./model.role";
 import { UserEntity } from "./model.user";
 
@@ -13,8 +13,8 @@ export class PermitEntity{
     @Column({type:'text'})
     description:string;
 
-    @ManyToOne(()=>RoleEntity, (role:RoleEntity) => (role.permitsAllowed))
-    @JoinColumn({name:'role_id'})
+    @ManyToMany(()=>RoleEntity, (role:RoleEntity) => (role.permitsAllowed))
+    @JoinTable()
     role: RoleEntity;
 
     @ManyToMany(()=>UserEntity,(user)=>(user.permits))
