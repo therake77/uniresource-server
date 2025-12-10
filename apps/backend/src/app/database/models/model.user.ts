@@ -1,9 +1,10 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm"
 import { RoleEntity } from "./model.role";
 import { PermitEntity } from "./model.permit";
 import { ResourceEntity } from "./model.rsrcEnt";
 
 @Entity('user')
+@Unique(['email'])
 export class UserEntity{
 
     @PrimaryGeneratedColumn()

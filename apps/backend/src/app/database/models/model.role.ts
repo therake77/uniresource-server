@@ -13,7 +13,7 @@ export class RoleEntity{
     @Column({type:'text'})
     description:string;
 
-    @OneToMany(()=>PermitEntity, (permit:PermitEntity) => (permit.role))
+    @ManyToMany(()=>PermitEntity, (permit:PermitEntity) => (permit.role))
     permitsAllowed: PermitEntity[];
 
     @ManyToMany(()=>UserEntity,(user)=>(user.roles))

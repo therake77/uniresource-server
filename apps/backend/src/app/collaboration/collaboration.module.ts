@@ -1,11 +1,11 @@
 import { Module } from "@nestjs/common";
-import { UserController } from "./user.controller";
 import { AuthModule } from "../auth/auth.module";
 import { AccessModule } from "../access/access.module";
+import { CollaboratorController } from "./collaboration.controller";
 
 @Module({
     imports:[AuthModule,AccessModule],
-    controllers:[UserController],
+    controllers:[CollaboratorController],
     providers:[]
 })
-export class UserModule{}
+export class CollaboratorModule{}
