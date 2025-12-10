@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, UseGuards, Request } from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
-import { SearchDto } from "../models/dto/search.dto";
+import { SearchResourceDto } from "../models/dto/searchResource";
 
 @Controller('user')
 export class UserController{
@@ -18,7 +18,7 @@ export class UserController{
 
     @Get('resources/search')
     @UseGuards(JwtGuard)
-    async search(@Request() rq:any, @Body() searchDto:SearchDto){
+    async search(@Request() rq:any, @Body() searchDto:SearchResourceDto){
         return "Imagine a list of resources here";
     }
 
