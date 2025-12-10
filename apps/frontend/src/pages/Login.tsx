@@ -1,7 +1,7 @@
-import Header from '../components/ui/Header';
-import Footer from '../components/ui/Footer';
-import LoginForm from '../components/ui/LoginForm';
-import ImagePanel from '../components/ui/ImagePanel';
+import Header from '../components/base/Header';
+import Footer from '../components/base/Footer';
+import LoginForm from '../components/base/LoginForm';
+import ImagePanel from '../components/base/ImagePanel';
 
 export function Login() {
   return (
