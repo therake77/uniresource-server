@@ -8,7 +8,7 @@ import { AccessRegisterEntity } from "./accessRegister";
 @Entity()
 export class ResourceEntity{
     @PrimaryGeneratedColumn()
-    rsrc_id?:number;
+    rsrc_id:number;
     
     @Column()
     path:string;

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service";
 import { AuthService } from "../auth/auth.service";
 import { Token } from "../models/common/token";
@@ -32,9 +32,13 @@ export class RequestService{
     }
 
     //backdoor
-    async directUploadResource(newResource:{date:Date;filename:string,extra:NewResourceDto}){
+    async directUploadResource(newResource:{date:Date;filename:string,extra:NewResourceDto},token:Token){
         console.log(newResource);
-        await this.databaseService.saveResource(newResource);
+        const userFound = await this.authService.getUser(token);
+        if(!userFound){
+            throw new NotFoundException("User can't be identified")
+        }
+        await this.databaseService.saveResource(newResource,userFound);
     }
 
 }

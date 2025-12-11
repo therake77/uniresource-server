@@ -17,6 +17,7 @@ import { ResourcePolicy } from "./models/model.policy";
 import { Policy } from "../models/common/policy";
 import { ResultDto } from "../models/dto/result.dto";
 import { NewResourceDto } from "../models/common/newResourceDto";
+import { AuthorEntity } from "./models/model.author";
 
 @Injectable()
 export class DatabaseService{
@@ -33,7 +34,11 @@ export class DatabaseService{
         @InjectRepository(RoleEntity)
         private readonly roleRespository: Repository<RoleEntity>,
         @InjectRepository(ResourceMetadataEntity)
-        private readonly rsrcMetadataRepository: Repository<ResourceMetadataEntity>
+        private readonly rsrcMetadataRepository: Repository<ResourceMetadataEntity>,
+        @InjectRepository(ResourcePolicy)
+        private readonly rsrcPolicyRepository: Repository<ResourcePolicy>,
+        @InjectRepository(AuthorEntity)
+        private readonly authorRepository: Repository<AuthorEntity>
     ){}
 
     private async fromPermitToDatabaseEntities(permit:Permit): Promise<PermitEntity[]>{
@@ -99,7 +104,7 @@ export class DatabaseService{
         
 
         const rsrcObj:ResourceObject = {
-            rsrc_id : rsrcEntFound.rsrc_id,
+            rsrc_id : rsrcEntFound.rsrc_id!,
             path : rsrcEntFound.path,
             policies : rsc_policy
         }
@@ -161,7 +166,7 @@ export class DatabaseService{
 
         
         const rsrc_ref:ResourceReference = {
-            rsrc_id : rsrcRefFound.rsrc_id,
+            rsrc_id : rsrcRefFound.rsrc_id!,
             name : rsrcRefFound.name,
             type : rsrcRefFound.type,
             publish_date : rsrcRefFound.publish_date,
@@ -265,33 +270,46 @@ export class DatabaseService{
    //This is a temporal method
     async saveResource(newResource:{date:Date;filename:string,extra:NewResourceDto},user:User){
         //Construct the resource object
-        const userFound = this.findUser(user.id,user.role);
+        const userFound = await this.userRepository.findOne({
+            where:{ user_id: user.id}
+        });
+        
         if(!userFound){
             throw new NotFoundException("User not found for this operation");
         }
+
         const metadata = newResource.extra.metadata;
-        const newResourceEntity:ResourceEntity = {
-            path: newResource.filename,
-            resourceMetadata: {
-                name: metadata.name,
-                type : metadata.type,
-                publish_date : metadata.publish_date,
-                upload_date: newResource.date,
-                course : metadata.course,
-                semester : metadata.semester,
-                school : metadata.school,
-                description : metadata.description
-            },
-            policy:{
-                canBeDownload: newResource.extra.isDownloadable,
-                canBeIndexed : true
-            },
-            responsible:{
-                
-            }
+        //first, register the metadata entity, authors entities and resource policy entity
+        const authorsSaved:AuthorEntity[] = await this.authorRepository.save(
+            newResource.extra.authors.map((authorName:string)=>({author_name:authorName}))
+        )
+        
+        const newRsrcEntity:ResourceEntity = await this.resourceRepository.save({
+            path:newResource.filename,
+            responsible:userFound,
+            authors: authorsSaved  
+        })
 
+        this.rsrcMetadataRepository.save({
+            name:metadata.name,
+            type:metadata.type,
+            publish_date:metadata.publish_date,
+            upload_date:newResource.date,
+            course:metadata.course,
+            semester:metadata.semester,
+            school:metadata.school,
+            description:metadata.description,
+            rsrc_ent:newRsrcEntity
+        })
 
-        }
+        this.rsrcPolicyRepository.save({
+            rsrc_ent: newRsrcEntity,
+            canBeDownload : newResource.extra.isDownloadable,
+            canBeIndexed : true
+        })
+
+        
+        
     }
 
     private convertRawResultToDto(raw:{id:number,name:string,author_name:string}[]):ResultDto[]{

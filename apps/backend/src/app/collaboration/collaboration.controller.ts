@@ -50,6 +50,7 @@ export class CollaboratorController{
             }
         })
     }))
+    
     async directUpload(
         @Req() req: Request & {user: Token}, 
         @Body() newResourceDto: NewResourceDto,
@@ -59,7 +60,7 @@ export class CollaboratorController{
             date: new Date((req as any).uploadDate),
             filename: file.filename,
             extra: newResourceDto
-        });
+        }, req.user);
     }
 
     @Delete('delete/:id')
