@@ -1,9 +1,14 @@
-import { Body, Controller, Get, Param, UseGuards, Request } from "@nestjs/common";
+import { Body, Controller, Get, Param, UseGuards, Request, NotFoundException, UsePipes, ValidationPipe } from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
-import { SearchDto } from "../models/dto/search.dto";
+import { SearchResourceDto } from "../models/dto/searchResource";
+import { AccessService } from "../access/access.service";
 
 @Controller('user')
 export class UserController{
+    constructor(
+        private readonly accessService:AccessService
+    ){}
+
     @Get('resources')
     @UseGuards(JwtGuard)
     async getResources(){
@@ -16,12 +21,17 @@ export class UserController{
         return "Imagine a resource reference here";
     }
 
-    @Get('resources/search')
+    @Get('search')
     @UseGuards(JwtGuard)
-    async search(@Request() rq:any, @Body() searchDto:SearchDto){
-        return "Imagine a list of resources here";
+    @UsePipes(ValidationPipe)
+    async search(@Request() rq:any, @Body() searchDto:SearchResourceDto){
+        console.log(searchDto);
+        const result = await this.accessService.searchResource(searchDto)
+        console.log(result)
+        if(result.length === 0){
+            throw new NotFoundException;
+        }
+        return result;
     }
-
-    
 
 }

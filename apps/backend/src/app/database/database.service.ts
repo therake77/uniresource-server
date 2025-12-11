@@ -63,6 +63,7 @@ export class DatabaseService{
         .where('policy.canBeIndexed = TRUE')
         if(filters.authors){
             qb.andWhere('author.author_name IN (...:author_names)',{author_names:filters.authors});
+            console.log("author field detected")
         }
         if(filters.course){
             qb.andWhere('metadata.course = :course',{course: filters.course})
@@ -72,6 +73,7 @@ export class DatabaseService{
         }
         if(filters.name){
             qb.andWhere('metadata.name = :name',{name : filters.name})
+            console.log(`name field detected ${filters.name}`)
         }
         if(filters.school){
             qb.andWhere('metadata.school = :school',{school:filters.school})
@@ -82,8 +84,9 @@ export class DatabaseService{
         if(filters.type){
             qb.andWhere('metadata.type = :type',{type : filters.type})
         }
-        qb.select(['metadata.name AS name'])
-        return qb.getRawMany<{ id: number; name: string }>()
+        //qb.select(['metadata.rsrc_id AS id','metadata.name AS name'])
+        console.log(qb.getSql())
+        return qb.getRawMany()
     }
 
     saveUser(user:CreateUserDto,role:Role,permits:Permit){

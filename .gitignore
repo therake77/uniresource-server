@@ -36,6 +36,7 @@ testem.log
 #.env
 #*/.env
 docker/*
+storage/*
 
 # System Files
 .DS_Store
