@@ -15,7 +15,7 @@ export class UserController{
     @Get('resource/:id')
     @UseGuards(JwtGuard)
     @UsePipes(ValidationPipe)
-    async getResourceAsImages(@Req() req : { user: Token },@Param() id: number){
+    async getResourceAsImages(@Req() req : { user: Token },@Param('id') id: number){
         const token:Token = req.user;
         console.log(token);
         return "Imagine here are some resources";
@@ -42,7 +42,7 @@ export class UserController{
 
     @Get('rsrc_ref/:id')
     @UseGuards(JwtGuard)
-    async getResourceReference(@Req() req: { user: Token }, @Param() id:number){
+    async getResourceReference(@Req() req: { user: Token }, @Param('id') id:number){
         return await this.accessService.createResourceReference(id,req.user);
     }
 }

@@ -45,6 +45,7 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@types/multer": "^2.0.0",
     "@types/node": "20.19.9",
     "@types/passport-local": "^1.0.38",
     "@types/react": "^19.0.0",

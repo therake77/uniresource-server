@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
 import { PermitEntity } from "./model.permit";
 import { UserEntity } from "./model.user";
 
@@ -18,4 +18,5 @@ export class RoleEntity{
 
     @ManyToMany(()=>UserEntity,(user)=>(user.roles))
     users:UserEntity[];
+    
 }

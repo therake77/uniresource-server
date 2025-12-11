@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, StreamableFile, UnauthorizedException } from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
 import { SearchResourceDto } from "../models/dto/searchResource";
 import { DatabaseService } from "../database/database.service";

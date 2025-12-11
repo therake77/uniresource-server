@@ -11,11 +11,12 @@ import { SearchResourceDto } from "../models/dto/searchResource";
 import { PermitEntity } from "./models/model.permit";
 import { RoleEntity } from "./models/model.role";
 import { ResourceObject } from "../models/common/resource_obj";
-import { NotFoundError } from "rxjs";
 import { ResourceMetadataEntity } from "./models/model.rsrcMeta";
 import { ResourceReference } from "../models/common/resource_ref";
 import { ResourcePolicy } from "./models/model.policy";
 import { Policy } from "../models/common/policy";
+import { ResultDto } from "../models/dto/result.dto";
+import { NewResourceDto } from "../models/common/newResourceDto";
 
 @Injectable()
 export class DatabaseService{
@@ -90,9 +91,10 @@ export class DatabaseService{
         const rsrcEntFound = await this.resourceRepository.findOne({
             where: {rsrc_id: id}
         })
-        if(rsrcEntFound == null){
+        if(!rsrcEntFound){
             return null;
         }
+
         const rsc_policy = this.fromResourcePolicyToPolicy(rsrcEntFound.policy);
         
 
@@ -113,7 +115,7 @@ export class DatabaseService{
         .leftJoinAndSelect('u.roles','r')
         .leftJoinAndSelect('u.permits','p')
         .where('u.user_id = :id',{id:userId})
-        .andWhere('r.role_name := role',{role:requestedRole})
+        .andWhere('r.role_name = :role',{role:requestedRole})
         .getOne()
         if(userFound == null){
             return null;
@@ -141,20 +143,23 @@ export class DatabaseService{
         return user;
     }
 
-    async findResourceReference(rsrc_id:number):Promise<ResourceReference | null>{
+    async findResourceReference(id:number):Promise<ResourceReference | null>{
 
         const rsrcRefFound:ResourceMetadataEntity | null = await this.rsrcMetadataRepository.findOne({
-            where: {rsrc_id : rsrc_id}
+            where: {rsrc_id : id}
         })
+
+        if(!rsrcRefFound){
+            return null
+        }
 
         const authorsFound:string[] = await this.resourceRepository.createQueryBuilder('r')
         .leftJoinAndSelect('r.authors','a')
+        .where('r.rsrc_id = :id',{id:rsrcRefFound.rsrc_id})
         .select('a.author_name')
         .getRawMany<string>();
 
-        if(rsrcRefFound == null){
-            return null
-        }
+        
         const rsrc_ref:ResourceReference = {
             rsrc_id : rsrcRefFound.rsrc_id,
             name : rsrcRefFound.name,
@@ -174,7 +179,7 @@ export class DatabaseService{
 
     }
 
-    async findResourceByCriteria(filters:SearchResourceDto){
+    async findResourceByCriteria(filters:SearchResourceDto): Promise<ResultDto[]>{
         const qb = this.resourceRepository.createQueryBuilder('resource')
         qb.innerJoinAndSelect('resource.resourceMetadata','metadata')
         .leftJoinAndSelect('resource.authors','author')
@@ -201,12 +206,14 @@ export class DatabaseService{
         if(filters.type){
             qb.andWhere('metadata.type = :type',{type : filters.type})
         }
-        qb.select(['metadata.name AS name'])
-        const result:{id: number; name:string}[] =  await qb.getRawMany<{ id: number; name: string }>();
-        if(result.length == 0){
+        qb.select(['resource.rsrc_id AS id', 'metadata.name AS name', 'author.author_name AS author_name'])
+        const raw_result:{id: number; name:string; author_name:string }[] =  await qb.getRawMany<{id: number; name:string; author_name:string}>();
+        
+        if(raw_result.length == 0){
             throw new NotFoundException();
         }
-        return result;
+
+        return this.convertRawResultToDto(raw_result);
     }
 
     getRequestsByCollab(user: User){
@@ -255,31 +262,56 @@ export class DatabaseService{
         return user;
     }
 
-    async buildReference(id: number){
-        const qb = this.resourceRepository.createQueryBuilder('r')
-        qb.innerJoin('r.metadata','m')
-        qb.innerJoin('r.authors','a')
-        qb.andWhere('m.rsrc_id = :id',{id:id})
-        qb.select([
-            'm.rsrc_id',
-            'm.name',
-            'm.type'
-        ])
-        //TODO(finish this)
-        return qb.getRawOne()
+   //This is a temporal method
+    async saveResource(newResource:{date:Date;filename:string,extra:NewResourceDto},user:User){
+        //Construct the resource object
+        const userFound = this.findUser(user.id,user.role);
+        if(!userFound){
+            throw new NotFoundException("User not found for this operation");
+        }
+        const metadata = newResource.extra.metadata;
+        const newResourceEntity:ResourceEntity = {
+            path: newResource.filename,
+            resourceMetadata: {
+                name: metadata.name,
+                type : metadata.type,
+                publish_date : metadata.publish_date,
+                upload_date: newResource.date,
+                course : metadata.course,
+                semester : metadata.semester,
+                school : metadata.school,
+                description : metadata.description
+            },
+            policy:{
+                canBeDownload: newResource.extra.isDownloadable,
+                canBeIndexed : true
+            },
+            responsible:{
+                
+            }
+
+
+        }
     }
 
-    async findUserById(id:number){
-        return await this.userRepository.findOneBy({ user_id: id})
-    }   
+    private convertRawResultToDto(raw:{id:number,name:string,author_name:string}[]):ResultDto[]{
+        return Object.values(
+            raw.reduce((acc:Record<number,ResultDto> , row) => {
+                const id = row.id;
+                if(!acc[id]){
+                    acc[id] = {
+                        rsrc_id : id,
+                        name : row.name,
+                        authors : []
+                    };
+                }
 
-    getRespository<T extends ObjectLiteral> (entity: EntityTarget<T>): Repository<T> {
-        return this.dataSource.getRepository(entity);    
+                if(row.author_name){
+                    acc[id].authors.push(row.author_name);
+                }
+                return acc;
+            },{}
+            )
+        );
     }
-
-    query(sql:string, params?: any[]){
-        //TODO(possible not necessary and will be removed)
-        return
-    }
-
 }

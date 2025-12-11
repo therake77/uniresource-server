@@ -5,7 +5,7 @@ import { Type } from "class-transformer";
 @Entity()
 export class ResourceMetadataEntity{
     @PrimaryColumn()
-    rsrc_id:number;
+    rsrc_id?:number;
     
     @Column()
     name:string;
@@ -35,6 +35,6 @@ export class ResourceMetadataEntity{
 
     @OneToOne(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.resourceMetadata))
     @JoinColumn({ name: 'rsrc_id'})
-    rsrc_ent:ResourceEntity;
+    rsrc_ent?:ResourceEntity;
 
 }
