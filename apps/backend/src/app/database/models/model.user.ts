@@ -1,7 +1,9 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm"
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm"
 import { RoleEntity } from "./model.role";
 import { PermitEntity } from "./model.permit";
 import { ResourceEntity } from "./model.rsrcEnt";
+import { AccessRegisterEntity } from "./accessRegister";
+import { RequestEntity } from "./model.requests";
 
 @Entity('user')
 @Unique(['email'])
@@ -29,4 +31,10 @@ export class UserEntity{
 
     @OneToMany(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.responsible))
     responsible_of:ResourceEntity[];
+
+    @OneToMany(()=>AccessRegisterEntity,(registerEntry)=>(registerEntry.accessedBy))
+    hasAccessedTo:AccessRegisterEntity[];
+
+    @OneToMany(()=>RequestEntity,(request)=>(request.requestor))
+    requestsMade:RequestEntity[]
 }

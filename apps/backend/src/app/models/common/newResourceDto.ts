@@ -1,7 +1,9 @@
 import { Type } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsNumber } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator";
+import { Policy } from "./policy";
+import { User } from "./user";
 
-export class Metadata{
+export class NewMetadataDto{
     @IsNotEmpty()
     name:string;
     
@@ -10,13 +12,15 @@ export class Metadata{
 
     @IsNotEmpty()
     @Type(()=>Date)
+    @IsDate()
     publish_date:Date;
 
     @IsNotEmpty()
     course:string;
-
-    @IsNumber()
+    
     @IsNotEmpty()
+    @Type(()=>Number)
+    @IsNumber()
     semester:number;
 
     @IsNotEmpty()
@@ -28,15 +32,38 @@ export class Metadata{
 
 export class NewResourceDto{
     
+    @ValidateNested()
     @IsNotEmpty()
-    @Type(()=>(Metadata))
-    metadata:Metadata;
+    @Type(()=>(NewMetadataDto))
+    metadata:NewMetadataDto;
 
     @IsNotEmpty()
     @IsBoolean()
+    @Type(()=>Boolean)
     isDownloadable:boolean;
 
     @IsNotEmpty()
+    @IsArray()
+    @IsString({each:true})
     authors:string[];
+}
+
+export class NewMetadata{
+    name:string;
+    type:string;
+    publish_date:Date;
+    upload_date:Date;
+    course:string;
+    semester:number;
+    school:string;
+    description:string;
+}
+
+export class NewResource{
+    path:string;
+    resourceMetadata:NewMetadata;
+    policy:Policy
+    authors:string[]
+    responsible:User
 }
 
