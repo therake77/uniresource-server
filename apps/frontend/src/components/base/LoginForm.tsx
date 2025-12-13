@@ -11,10 +11,29 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
 
   // Manejador del envío del formulario
-  const handleSubmit = (e: React.FormEvent, type: string) => {
+  const handleSubmit = async (e: React.FormEvent, type: string) => {
     e.preventDefault();
-    console.log(`Login tipo: ${type}, Email: ${email}`);
-    // Aquí iría la lógica de autenticación
+    try{
+      const res = await fetch("https://localhost:3000/api/auth/login",{
+        method : 'POST',
+        headers : {
+          "Content-Type" : "application/json"
+        },
+        body : JSON.stringify({
+          email : email,
+          password : password,
+          roleRequested : type
+        })
+      })
+
+      const token = await res.text();
+      console.log(token);
+      localStorage.setItem('access_token',token);
+    }catch(err){
+      alert("Invalid credentials");
+    }
+    
+    return;
   };
 
   return (
@@ -76,6 +95,7 @@ const LoginForm = () => {
           {/* Botón principal - Inicia sesión */}
           <Button
             type="submit"
+            onClick={(e)=> handleSubmit(e,"USER")}
             className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg"
           >
             Inicia sesión
@@ -84,7 +104,7 @@ const LoginForm = () => {
           {/* Botón secundario - Colaborador */}
           <Button
             type="button"
-            onClick={(e) => handleSubmit(e, "colaborador")}
+            onClick={(e) => handleSubmit(e, "COLLAB")}
             className="w-full h-11 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium rounded-lg"
           >
             Inicia sesión (colaborador)
@@ -93,7 +113,7 @@ const LoginForm = () => {
           {/* Botón secundario - Administrador */}
           <Button
             type="button"
-            onClick={(e) => handleSubmit(e, "administrador")}
+            onClick={(e) => handleSubmit(e, "ADMIN")}
             className="w-full h-11 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium rounded-lg"
           >
             Inicia sesión (administrador)
