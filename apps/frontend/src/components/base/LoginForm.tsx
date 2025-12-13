@@ -13,26 +13,27 @@ const LoginForm = () => {
   // Manejador del envío del formulario
   const handleSubmit = async (e: React.FormEvent, type: string) => {
     e.preventDefault();
-    try{
-      const res = await fetch("https://localhost:3000/api/auth/login",{
-        method : 'POST',
-        headers : {
-          "Content-Type" : "application/json"
-        },
-        body : JSON.stringify({
-          email : email,
-          password : password,
-          roleRequested : type
-        })
-      })
-
-      const token = await res.text();
-      console.log(token);
-      localStorage.setItem('access_token',token);
-    }catch(err){
-      alert("Invalid credentials");
-    }
+    console.log("Hello");
     
+    const res = await fetch("http://localhost:3000/api/auth/login",{
+      method : 'POST',
+      headers : {
+        "Content-Type" : "application/json"
+      },
+      body : JSON.stringify({
+        email : email,
+        password : password,
+        roleRequested : type
+      }),
+    })
+    if(!res.ok){
+      alert(`Error: ${(await res.json()).message}`)
+      return;
+    }
+
+    const token = await res.text();
+  
+    localStorage.setItem('access_token',token);
     return;
   };
 
@@ -59,7 +60,7 @@ const LoginForm = () => {
       </div>
 
       {/* Formulario de login */}
-      <form onSubmit={(e) => handleSubmit(e, "normal")} className="space-y-5">
+      <form className="space-y-5">
         {/* Campo de Email */}
         <div className="space-y-2">
           <Label htmlFor="email" className="text-foreground font-medium">
@@ -94,7 +95,7 @@ const LoginForm = () => {
         <div className="space-y-3 pt-4">
           {/* Botón principal - Inicia sesión */}
           <Button
-            type="submit"
+            type="button"
             onClick={(e)=> handleSubmit(e,"USER")}
             className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg"
           >

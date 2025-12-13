@@ -16,6 +16,10 @@ async function bootstrap() {
       enableImplicitConversion:true
     }
   }))
+  app.enableCors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3000;

@@ -15,6 +15,7 @@ export class AuthController{
     @UsePipes(ValidationPipe)
     @UseGuards(LocalGuard)
     async login(@Req() req:Request,@Body() logindto:LoginDto){
+        console.log(req.user);
         return req.user;
     }
 
