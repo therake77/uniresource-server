@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, StreamableFile, UnauthorizedException } from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
 import { SearchResourceDto } from "../models/dto/searchResource";
 import { DatabaseService } from "../database/database.service";
@@ -9,6 +9,7 @@ import { join } from "path";
 import { createReadStream } from "fs";
 import { ReadStream } from "typeorm/platform/PlatformTools.js";
 
+
 @Injectable()
 export class AccessService{
     constructor(
@@ -16,8 +17,33 @@ export class AccessService{
         private readonly databaseService:DatabaseService
     ){}
     
-    async getResourcesAsImages(rsrc_id:number,token:Token){
+    async getResourcesByResponsible(token:Token){
+        const user = await this.authService.getUser(token);
+        if(!user){
+            throw new NotFoundException("Used cannot be found");
+        }
+        return await this.databaseService.searchResourcesByCollab(user);
+    }
 
+    async getResourcesAsImages(rsrc_id:number,token:Token):Promise<string>{
+        //first, identity the user
+        const user = await this.databaseService.findUser(token.userId,token.role);
+        if(!user){
+            throw new NotFoundException("User can't be found");
+        }
+        //second, check permits
+        if(!user.permits.canAccess || !(user.permits as UserPermit).canVisualize){
+            throw new UnauthorizedException("You don't have enough permits to execute this operation");
+        }
+        //now, get the resource object
+        const rsrcObj = await this.databaseService.getResourceObject(rsrc_id);
+        if(!rsrcObj){
+            throw new NotFoundException("Resource don't exist")
+        }
+        //register the activity
+        this.databaseService.registerAccessActivity(user.id,rsrcObj.rsrc_id,'VISUALIZATION');
+        //return an streamable reference for the object
+        return rsrcObj.path;
     }
 
     async downloadResources(rsrc_id:number, token:Token):Promise<ReadStream>{

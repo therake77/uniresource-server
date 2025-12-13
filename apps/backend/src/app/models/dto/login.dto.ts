@@ -1,7 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsIn, IsNotEmpty } from 'class-validator'
-
-export const roles = ['USER','COLLABORATOR','ADMIN']
+import { Role } from '../common/roles';
 
 export class LoginDto{
     
@@ -14,6 +13,6 @@ export class LoginDto{
 
     @IsNotEmpty()
     @Transform(({value}) => typeof value == 'string' ? value.toUpperCase() : value)
-    @IsIn(roles)
+    @IsIn([Role.USER,Role.COLLAB,Role.ADMIN])
     roleRequested:string;
 }
