@@ -24,7 +24,9 @@ export class RequestService{
 
     async requestUpload(uploadDate:Date, filename:string,newResourceDto:NewResourceDto,token:Token){
         console.log(newResourceDto);
+        console.log(token)
         const userFound = await this.authService.getUser(token);
+        console.log(userFound)
         if(!userFound){
             throw new NotFoundException("User can't be identified")
         }
@@ -32,16 +34,15 @@ export class RequestService{
             throw new UnauthorizedException("You can't perform this operation");
         }
 
-        const providedMetadata = newResourceDto.metadata;
         const formattedMetadata:NewMetadata = {
-            name : providedMetadata.name,
-            type : providedMetadata.type,
-            publish_date : providedMetadata.publish_date,
+            name : newResourceDto.name,
+            type : newResourceDto.type,
+            publish_date : newResourceDto.publish_date,
             upload_date : uploadDate,
-            course : providedMetadata.course,
-            semester : providedMetadata.semester,
-            school : providedMetadata.school,
-            description : providedMetadata.description
+            course : newResourceDto.course,
+            semester : newResourceDto.semester,
+            school : newResourceDto.school,
+            description : newResourceDto.description
         }
 
         const newRsrc:NewResource = {
@@ -87,14 +88,14 @@ export class RequestService{
         const newResource:NewResource = {
             path : filename,
             resourceMetadata : {
-                name: upd_rsrc.metadata.name,
-                type : upd_rsrc.metadata.type,
-                publish_date : upd_rsrc.metadata.publish_date,
+                name: upd_rsrc.name,
+                type : upd_rsrc.type,
+                publish_date : upd_rsrc.publish_date,
                 upload_date : requestDate,
-                course : upd_rsrc.metadata.course,
-                semester : upd_rsrc.metadata.semester,
-                school : upd_rsrc.metadata.school,
-                description : upd_rsrc.metadata.description
+                course : upd_rsrc.course,
+                semester : upd_rsrc.semester,
+                school : upd_rsrc.school,
+                description : upd_rsrc.description
             },
             policy : {
                 canBeDownloaded : upd_rsrc.isDownloadable,
@@ -155,16 +156,6 @@ export class RequestService{
             requestor: user,
             object_affected: user.id
         })
-    }
-
-    //backdoor
-    async directUploadResource(newResource:{date:Date;filename:string,extra:NewResourceDto},token:Token){
-        console.log(newResource);
-        const userFound = await this.authService.getUser(token);
-        if(!userFound){
-            throw new NotFoundException("User can't be identified")
-        }
-        await this.databaseService.saveResource(newResource,userFound);
     }
 
 }

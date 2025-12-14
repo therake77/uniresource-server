@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserEntity } from "./model.user";
 
 
@@ -12,6 +12,7 @@ export class RequestEntity{
     request_id:number;
 
     @ManyToOne(()=>UserEntity,(user)=>(user.requestsMade))
+    @JoinColumn({name : "requestor_id"})
     requestor:UserEntity;
     
     @Column()

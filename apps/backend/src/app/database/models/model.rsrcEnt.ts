@@ -20,8 +20,7 @@ export class ResourceEntity{
     )
     resourceMetadata:ResourceMetadataEntity;
 
-    @OneToOne(()=>(ResourcePolicy),(policy)=>(policy.rsrc_ent))
-    @JoinColumn()
+    @OneToOne(()=>(ResourcePolicy),(policy)=>(policy.rsrc_ent),{cascade:true})
     policy:ResourcePolicy;
 
     @ManyToMany(()=>(AuthorEntity),(author)=>(author.resources))

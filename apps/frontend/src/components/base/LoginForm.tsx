@@ -1,11 +1,15 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { GraduationCap } from "lucide-react";
 
 const LoginForm = () => {
+  // Hook de navegación
+  const navigate = useNavigate();
+
   // Estados para los campos del formulario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

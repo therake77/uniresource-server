@@ -1,9 +1,10 @@
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsDate, IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { Policy } from "./policy";
 import { User } from "./user";
 
-export class NewMetadataDto{
+export class NewResourceDto{
+
     @IsNotEmpty()
     name:string;
     
@@ -28,14 +29,6 @@ export class NewMetadataDto{
 
     @IsNotEmpty()
     description:string;
-}
-
-export class NewResourceDto{
-    
-    @ValidateNested()
-    @IsNotEmpty()
-    @Type(()=>(NewMetadataDto))
-    metadata:NewMetadataDto;
 
     @IsNotEmpty()
     @IsBoolean()
@@ -46,6 +39,7 @@ export class NewResourceDto{
     @IsArray()
     @IsString({each:true})
     authors:string[];
+    
 }
 
 export class NewMetadata{

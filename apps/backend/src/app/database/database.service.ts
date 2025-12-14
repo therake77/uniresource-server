@@ -151,12 +151,12 @@ export class DatabaseService{
         }
 
         let foundPermits: UserPermit | ColabPermits | AdminPermits;
-        if(requestedRole === 'USER'){
+        if(requestedRole === Role.USER){
             console.log(userFound.permits);
             foundPermits = await this.fromPermitEntityToPermit(userFound.permits,UserPermit);    
-        }else if(requestedRole === 'COLAB'){
+        }else if(requestedRole === Role.COLLAB){
             foundPermits = await this.fromPermitEntityToPermit(userFound.permits,ColabPermits);
-        }else if( requestedRole === 'ADMIN')
+        }else if( requestedRole === Role.ADMIN)
             foundPermits = await this.fromPermitEntityToPermit(userFound.permits,AdminPermits);
         else{
             return null;
@@ -218,7 +218,7 @@ export class DatabaseService{
                 requestCreated = await this.requestRegister.save({
                     requestor:user,
                     request_type: request.requestType,
-                    object_affected: (request.object_affected! as number)
+                    object_affected: (request.object_affected as number)
                 })
                 break;
             }
@@ -231,31 +231,30 @@ export class DatabaseService{
                 if(authorsFound.length == 0){
                     throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
                 }
-                //metadata
-                const metadataCreated = await this.rsrcMetadataRepository.save({
-                    name : toBeSaved.resourceMetadata.name,
-                    type : toBeSaved.resourceMetadata.type,
-                    publish_date : toBeSaved.resourceMetadata.publish_date,
-                    upload_date : toBeSaved.resourceMetadata.upload_date,
-                    course : toBeSaved.resourceMetadata.course,
-                    semester : toBeSaved.resourceMetadata.semester,
-                    school : toBeSaved.resourceMetadata.school,
-                    description : toBeSaved.resourceMetadata.description,
-                })
-                const policyCreated = await this.rsrcPolicyRepository.save({
-                    canBeDownload: toBeSaved.policy.canBeDownloaded,
-                    canBeIndexed: toBeSaved.policy.canBeIndexed
-                })
-
+                //save resource
                 const resourceCreated = await this.resourceRepository.save({
                     path: toBeSaved.path,
-                    resourceMetadata: metadataCreated,
-                    policy: policyCreated,
+                    resourceMetadata: {
+                        name : toBeSaved.resourceMetadata.name,
+                        type : toBeSaved.resourceMetadata.type,
+                        publish_date : toBeSaved.resourceMetadata.publish_date,
+                        upload_date : toBeSaved.resourceMetadata.upload_date,
+                        course : toBeSaved.resourceMetadata.course,
+                        semester : toBeSaved.resourceMetadata.semester,
+                        school : toBeSaved.resourceMetadata.school,
+                        description : toBeSaved.resourceMetadata.description,
+                    },
+                    policy:{
+                        canBeDownload: toBeSaved.policy.canBeDownloaded,
+                        canBeIndexed: toBeSaved.policy.canBeIndexed
+                    },
                     authors: authorsFound,
                     responsible: user,
                 })
+
                 requestCreated = await this.requestRegister.save({
                     request_type: request.requestType,
+                    requestor: user,
                     object_affecting: resourceCreated.rsrc_id
                 })
                 break;
@@ -269,27 +268,24 @@ export class DatabaseService{
                 if(authorsFound.length == 0){
                     throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
                 }
-                //metadata
-                const metadataCreated = await this.rsrcMetadataRepository.save({
-                    name : toBeSaved.resourceMetadata.name,
-                    type : toBeSaved.resourceMetadata.type,
-                    publish_date : toBeSaved.resourceMetadata.publish_date,
-                    upload_date : toBeSaved.resourceMetadata.upload_date,
-                    course : toBeSaved.resourceMetadata.course,
-                    semester : toBeSaved.resourceMetadata.semester,
-                    school : toBeSaved.resourceMetadata.school,
-                    description : toBeSaved.resourceMetadata.description,
-                })
-                //policy
-                const policyCreated = await this.rsrcPolicyRepository.save({
-                    canBeDownload: toBeSaved.policy.canBeDownloaded,
-                    canBeIndexed: toBeSaved.policy.canBeIndexed
-                })
+
                 //the resource created, finally
                 const resourceCreated = await this.resourceRepository.save({
                     path: toBeSaved.path,
-                    resourceMetadata: metadataCreated,
-                    policy: policyCreated,
+                    resourceMetadata:{
+                        name : toBeSaved.resourceMetadata.name,
+                        type : toBeSaved.resourceMetadata.type,
+                        publish_date : toBeSaved.resourceMetadata.publish_date,
+                        upload_date : toBeSaved.resourceMetadata.upload_date,
+                        course : toBeSaved.resourceMetadata.course,
+                        semester : toBeSaved.resourceMetadata.semester,
+                        school : toBeSaved.resourceMetadata.school,
+                        description : toBeSaved.resourceMetadata.description,
+                    },
+                    policy: {
+                        canBeDownload: toBeSaved.policy.canBeDownloaded,
+                        canBeIndexed: toBeSaved.policy.canBeIndexed
+                    },
                     authors: authorsFound,
                     responsible: user,
                 })
@@ -447,50 +443,81 @@ export class DatabaseService{
         return user;
     }
 
+    async getRequests(){
+        const requests:RequestEntity[] =  await this.requestRegister.find();
+        const toReturn:{req_id:number;req_type:string; object_affected?:number,object_affecting?:number}[] = [];
+        for(const req of requests){
+            switch(req.request_type){
+                case(RequestObject.collabRequest || RequestObject.deleteRequest):{
+                    toReturn.push({
+                        req_id : req.request_id,
+                        req_type : req.request_type,
+                        object_affected : req.object_affected
+                    })
+                    break;
+                }
+                case(RequestObject.uploadRequest):{
+                    toReturn.push({
+                        req_id : req.request_id,
+                        req_type : req.request_type,
+                        object_affecting : req.object_affecting
+                    })
+                    break;
+                }
+                case(RequestObject.updateRequest):{
+                    toReturn.push({
+                        req_id : req.request_id,
+                        req_type : req.request_type,
+                        object_affected: req.object_affected,
+                        object_affecting : req.object_affecting
+                    })
+                    break;
+                }
+            }
+        }
+        if(toReturn.length == 0){
+            throw new NotFoundException("There are no requests");
+        }
+        return toReturn;
+    }
 
-   //This is a temporal method
-    async saveResource(newResource:{date:Date;filename:string,extra:NewResourceDto},user:User){
-        //Construct the resource object
-        const userFound = await this.userRepository.findOne({
-            where:{ user_id: user.id}
-        });
-        
-        if(!userFound){
-            throw new NotFoundException("User not found for this operation");
+    async getRequest(requestId:number){
+        //first get the requestEntity to know which type of requests we are dealing with
+        const requestFound = await this.requestRegister.findOne({
+            where : {request_id : requestId}
+        })
+        if(!requestFound){
+            throw new NotFoundException("Cannot found request");
+        }
+        //now, check the type
+        switch(requestFound.request_type){
+            case(RequestObject.collabRequest):{
+                //so here the most important thing is to get the user information
+                const user = await this.userRepository.findOne({
+                    where:{user_id : requestFound.object_affected as number}
+                })
+                //TO FIX: ¿What if the user was deleted? fix request model
+                if(!user){
+                    throw new NotFoundException("Cannot found user on the request");
+                }
+                return {
+                    requestType: requestFound.request_type,
+                    requestor: user,
+                    object_affected: user
+                }
+            }
+            case(RequestObject.uploadRequest):{
+                break;
+            }
+            case(RequestObject.updateRequest):{
+                break;
+            }
+            case(RequestObject.deleteRequest):{
+                break;
+            }
+            
         }
 
-        const metadata = newResource.extra.metadata;
-        //first, register the metadata entity, authors entities and resource policy entity
-        const authorsSaved:AuthorEntity[] = await this.authorRepository.save(
-            newResource.extra.authors.map((authorName:string)=>({author_name:authorName}))
-        )
-        
-        const newRsrcEntity:ResourceEntity = await this.resourceRepository.save({
-            path:newResource.filename,
-            responsible:userFound,
-            authors: authorsSaved  
-        })
-
-        this.rsrcMetadataRepository.save({
-            name:metadata.name,
-            type:metadata.type,
-            publish_date:metadata.publish_date,
-            upload_date:newResource.date,
-            course:metadata.course,
-            semester:metadata.semester,
-            school:metadata.school,
-            description:metadata.description,
-            rsrc_ent:newRsrcEntity
-        })
-
-        this.rsrcPolicyRepository.save({
-            rsrc_ent: newRsrcEntity,
-            canBeDownload : newResource.extra.isDownloadable,
-            canBeIndexed : false
-        })
-
-        
-        
     }
 
     private convertRawResultToDto(raw:{id:number,name:string,author_name:string}[]):ResultDto[]{

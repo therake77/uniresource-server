@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne, PrimaryColumn } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { ResourceEntity } from "./model.rsrcEnt";
 
 @Entity()
@@ -13,6 +13,7 @@ export class ResourcePolicy{
     canBeIndexed:boolean;
 
     @OneToOne(()=>(ResourceEntity),(rsrEnt)=>(rsrEnt.policy))
+    @JoinColumn({name:"rsrc_id"})
     rsrc_ent?:ResourceEntity;
 
 }

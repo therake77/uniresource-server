@@ -83,33 +83,6 @@ export class CollaboratorController{
         return await this.requestService.requestUpdate(uploadDate,filename,toUpdateDto,id,req.user);
     }
 
-    @Put('upload_backdoor')
-    @UsePipes(ValidationPipe)
-    @UseGuards(JwtGuard)
-    @UseInterceptors(FileInterceptor('file',{
-        storage: diskStorage({
-            destination: './storage/temp',
-            filename: (req:Request,file,cb) => {
-                const timestamp = Date.now();
-                (req as any)['uploadDate'] = timestamp;
-                const dateString = timestamp + '-' + Math.round(Math.random() * 1e9);
-                cb(null,dateString + '-' + file.originalname);
-            }
-        })
-    }))
-    
-    async directUpload(
-        @Req() req: Request & {user: Token}, 
-        @Body() newResourceDto: NewResourceDto,
-        @UploadedFile() file:Express.Multer.File
-    ){
-        await this.requestService.directUploadResource({
-            date: new Date((req as any).uploadDate),
-            filename: file.filename,
-            extra: newResourceDto
-        }, req.user);
-    }
-
     @Delete('delete/:id')
     @UsePipes(ValidationPipe)
     @UseGuards(JwtGuard)
