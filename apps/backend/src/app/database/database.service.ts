@@ -515,7 +515,6 @@ export class DatabaseService{
             case(RequestObject.deleteRequest):{
                 break;
             }
-            
         }
 
     }
