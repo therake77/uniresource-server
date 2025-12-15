@@ -15,7 +15,7 @@ import { ResourceReference } from "../models/common/resource_ref";
 import { ResourcePolicy } from "./models/model.policy";
 import { Policy } from "../models/common/policy";
 import { ResultDto } from "../models/dto/result.dto";
-import { NewResource, NewResourceDto } from "../models/common/newResourceDto";
+import { NewResource } from "../models/common/newResourceDto";
 import { AuthorEntity } from "./models/model.author";
 import { AccessRegisterEntity } from "./models/accessRegister";
 import { RequestObject } from "../models/common/requestDto";
