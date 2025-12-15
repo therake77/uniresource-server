@@ -2,11 +2,11 @@ import { AccessRegisterEntity } from "./accessRegister";
 import { AuthorEntity } from "./model.author";
 import { PermitEntity } from "./model.permit";
 import { ResourcePolicy } from "./model.policy";
-import { RequestEntity } from "./model.requests";
+import { RequestEntity, ResourceRequestEntity, UserRequestEntity } from "./model.requests";
 import { RoleEntity } from "./model.role";
 import { ResourceEntity } from "./model.rsrcEnt";
 import { ResourceMetadataEntity } from "./model.rsrcMeta";
 import { UserEntity } from "./model.user";
 
 export const entities = [UserEntity,PermitEntity,RoleEntity,AuthorEntity,ResourcePolicy,
-    ResourceEntity, ResourceMetadataEntity,AccessRegisterEntity,ResourcePolicy,RequestEntity]
+    ResourceEntity, ResourceMetadataEntity,AccessRegisterEntity,ResourcePolicy,UserRequestEntity,ResourceRequestEntity,RequestEntity]

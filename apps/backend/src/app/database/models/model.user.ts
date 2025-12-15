@@ -3,9 +3,9 @@ import { RoleEntity } from "./model.role";
 import { PermitEntity } from "./model.permit";
 import { ResourceEntity } from "./model.rsrcEnt";
 import { AccessRegisterEntity } from "./accessRegister";
-import { RequestEntity } from "./model.requests";
+import { ResourceRequestEntity, UserRequestEntity } from "./model.requests";
 
-@Entity('user')
+@Entity('user_entity')
 @Unique(['email'])
 export class UserEntity{
 
@@ -35,6 +35,9 @@ export class UserEntity{
     @OneToMany(()=>AccessRegisterEntity,(registerEntry)=>(registerEntry.accessedBy))
     hasAccessedTo:AccessRegisterEntity[];
 
-    @OneToMany(()=>RequestEntity,(request)=>(request.requestor))
-    requestsMade:RequestEntity[]
+    @OneToMany(()=>UserRequestEntity,(request)=>(request.requestor))
+    collaboratorRequests:UserRequestEntity[]
+
+    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.requestor))
+    requestsMade:ResourceRequestEntity[]
 }

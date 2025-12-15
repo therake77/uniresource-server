@@ -1,4 +1,3 @@
-import { User } from "./user";
 
 export class RequestObject{
 
@@ -23,10 +22,19 @@ export class RequestObject{
     */
     requestType:string;
 
-    requestor:User;
+    requestor:number;
 
     object_affected?:any;
     
     object_affecting?:any;
 
+}
+
+export class RequestDto{
+    request_id:number;
+    requestType: string;
+    requestor: number;
+    obj_affected?:number;
+    obj_affecting?:number;
+    status:string;
 }

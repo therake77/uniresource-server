@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { UserEntity } from "./models/model.user";
@@ -18,9 +18,10 @@ import { ResultDto } from "../models/dto/result.dto";
 import { NewResource } from "../models/common/newResourceDto";
 import { AuthorEntity } from "./models/model.author";
 import { AccessRegisterEntity } from "./models/accessRegister";
-import { RequestObject } from "../models/common/requestDto";
-import { RequestEntity } from "./models/model.requests";
+import { RequestDto, RequestObject } from "../models/common/requestDto";
+
 import { Role } from "../models/common/roles";
+import { RequestEntity, ResourceRequestEntity, UserRequestEntity } from "./models/model.requests";
 
 @Injectable()
 export class DatabaseService{
@@ -42,8 +43,12 @@ export class DatabaseService{
         private readonly authorRepository: Repository<AuthorEntity>,
         @InjectRepository(AccessRegisterEntity)
         private readonly accessRegister: Repository<AccessRegisterEntity>,
+        @InjectRepository(UserRequestEntity)
+        private readonly userRequestRegister: Repository<UserRequestEntity>,
+        @InjectRepository(ResourceRequestEntity)
+        private readonly rsrcRequestRegister: Repository<ResourceRequestEntity>,
         @InjectRepository(RequestEntity)
-        private readonly requestRegister: Repository<RequestEntity>
+        private readonly baseRequestRegister: Repository<RequestEntity>
     ){}
 
     private async fromPermitToDatabaseEntities(permit:Permit): Promise<PermitEntity[]>{
@@ -204,118 +209,90 @@ export class DatabaseService{
         return rsrc_ref;
     }
 
-    async saveRequest(request : RequestObject){
+    private async saveNewResourceIntoDatabase(user:UserEntity,toBeSaved:NewResource):Promise<ResourceEntity>{
+        const authorsFound = await this.convertAndSafeRawAuthors(toBeSaved.authors);
+        if(authorsFound.length == 0){
+            throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
+        }
+        const resourceCreated = await this.resourceRepository.save({
+            path: toBeSaved.path,
+            resourceMetadata: {
+                name : toBeSaved.resourceMetadata.name,
+                type : toBeSaved.resourceMetadata.type,
+                publish_date : toBeSaved.resourceMetadata.publish_date,
+                upload_date : toBeSaved.resourceMetadata.upload_date,
+                course : toBeSaved.resourceMetadata.course,
+                semester : toBeSaved.resourceMetadata.semester,
+                school : toBeSaved.resourceMetadata.school,
+                description : toBeSaved.resourceMetadata.description,
+            },
+            policy:{
+                canBeDownload: toBeSaved.policy.canBeDownloaded,
+                canBeIndexed: toBeSaved.policy.canBeIndexed
+            },
+            authors: authorsFound,
+            responsible: user,
+        })
+        return resourceCreated;
+    }
+
+    async saveRequest(request : RequestObject):Promise<number>{
         const user = await this.userRepository.findOne({
-            where: {user_id : request.requestor.id}
+            where: {user_id : request.requestor}
         })
 
         if(!user){
             throw new NotFoundException("saveRequest: User not found");
         }
-        let requestCreated:RequestEntity | undefined = undefined;
-        switch(request.requestType){
-            case(RequestObject.collabRequest):{
-                requestCreated = await this.requestRegister.save({
-                    requestor:user,
-                    request_type: request.requestType,
-                    object_affected: (request.object_affected as number)
-                })
-                break;
-            }
-            case(RequestObject.uploadRequest):{
-                //first: save the temp object data
-                const toBeSaved = request.object_affecting as NewResource;
-                //construct: the metadata, the policy object and the authors to be inserted object
-                //authors
-                const authorsFound = await this.convertAndSafeRawAuthors(toBeSaved.authors);
-                if(authorsFound.length == 0){
-                    throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
-                }
-                //save resource
-                const resourceCreated = await this.resourceRepository.save({
-                    path: toBeSaved.path,
-                    resourceMetadata: {
-                        name : toBeSaved.resourceMetadata.name,
-                        type : toBeSaved.resourceMetadata.type,
-                        publish_date : toBeSaved.resourceMetadata.publish_date,
-                        upload_date : toBeSaved.resourceMetadata.upload_date,
-                        course : toBeSaved.resourceMetadata.course,
-                        semester : toBeSaved.resourceMetadata.semester,
-                        school : toBeSaved.resourceMetadata.school,
-                        description : toBeSaved.resourceMetadata.description,
-                    },
-                    policy:{
-                        canBeDownload: toBeSaved.policy.canBeDownloaded,
-                        canBeIndexed: toBeSaved.policy.canBeIndexed
-                    },
-                    authors: authorsFound,
-                    responsible: user,
-                })
-
-                requestCreated = await this.requestRegister.save({
-                    request_type: request.requestType,
-                    requestor: user,
-                    object_affecting: resourceCreated.rsrc_id
-                })
-                break;
-            }
-            case(RequestObject.updateRequest):{
-                const toBeModified = request.object_affected as ResourceObject
-                const toBeSaved = request.object_affecting as NewResource
-                //so, first we need to save the modifier object
-                //retrieve the authors
-                const authorsFound = await this.convertAndSafeRawAuthors(toBeSaved.authors);
-                if(authorsFound.length == 0){
-                    throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
-                }
-
-                //the resource created, finally
-                const resourceCreated = await this.resourceRepository.save({
-                    path: toBeSaved.path,
-                    resourceMetadata:{
-                        name : toBeSaved.resourceMetadata.name,
-                        type : toBeSaved.resourceMetadata.type,
-                        publish_date : toBeSaved.resourceMetadata.publish_date,
-                        upload_date : toBeSaved.resourceMetadata.upload_date,
-                        course : toBeSaved.resourceMetadata.course,
-                        semester : toBeSaved.resourceMetadata.semester,
-                        school : toBeSaved.resourceMetadata.school,
-                        description : toBeSaved.resourceMetadata.description,
-                    },
-                    policy: {
-                        canBeDownload: toBeSaved.policy.canBeDownloaded,
-                        canBeIndexed: toBeSaved.policy.canBeIndexed
-                    },
-                    authors: authorsFound,
-                    responsible: user,
-                })
-                //now, save the request
-                requestCreated = await this.requestRegister.save({
-                    requestor: user,
-                    request_type: request.requestType,
-                    object_affected: toBeModified.rsrc_id,
-                    object_affecting: resourceCreated.rsrc_id
-                })
-                break;
-            }
-            case(RequestObject.deleteRequest):{
-                //this is quite easy. the resource already exists, so save the request directly
-                const toBeDeleted = request.object_affected as ResourceEntity;
-                
-                requestCreated = await this.requestRegister.save({
-                    requestor: user,
-                    request_type: request.requestType,
-                    object_affected: toBeDeleted.rsrc_id
-                })
-                
-                break;
-            }
+        if(request.requestType === RequestObject.collabRequest){
+            const requestCreated = await this.userRequestRegister.save({
+                requestor:user,
+                request_type: request.requestType,
+            })
+            return requestCreated.request_id;
         }
-        if(requestCreated === undefined){
-            throw new InternalServerErrorException("(databaseService) Cannot identify request type");
+        else if(request.requestType === RequestObject.uploadRequest){
+            //first save the new resource information in the database
+            const toBeSaved = request.object_affecting as NewResource
+            const new_rsrc = await this.saveNewResourceIntoDatabase(user,toBeSaved);
+            const requestCreated = await this.userRequestRegister.save({
+                requestor:user,
+                request_type: request.requestType,
+                object_affecting : new_rsrc
+            })
+            return requestCreated.request_id
         }
-        
-        return requestCreated.request_id;
+        else if(request.requestType === RequestObject.updateRequest){
+            const toModify = await this.resourceRepository.findOne({
+                where : {rsrc_id : request.object_affected as number}
+            })
+            if(!toModify){
+                throw new NotFoundException("Resource to modify cannot be found");
+            }
+            const toBeSaved = request.object_affecting as NewResource
+            const new_rsrc = await this.saveNewResourceIntoDatabase(user,toBeSaved);
+            return (await this.rsrcRequestRegister.save({
+                requestor: user,
+                request_type: request.requestType,
+                object_affected:toModify,
+                object_affecting: new_rsrc
+            })).request_id
+        }
+        else if( request.requestType === RequestObject.deleteRequest){
+            const toDelete = await this.resourceRepository.findOne({
+                where: {rsrc_id : request.object_affected as number}
+            })
+            if(!toDelete){
+                throw new NotFoundException("Resource to delete cannot be found")
+            }
+            return (await this.rsrcRequestRegister.save({
+                requestor: user,
+                request_type: request.requestType,
+                object_affected : toDelete
+            })).request_id
+        }else{
+            throw new BadRequestException("Request type is not valid");
+        }
     }
 
     async findResourceByCriteria(filters:SearchResourceDto): Promise<ResultDto[]>{
@@ -355,7 +332,7 @@ export class DatabaseService{
         return this.convertRawResultToDto(raw_result);
     }
 
-    async getRequestsByCollab(user: User):Promise<RequestObject[]>{
+    async getRequestsByCollab(user: User):Promise<RequestDto[]>{
         
         const userFound = await this.userRepository.findOne({
             where: {user_id : user.id}
@@ -365,22 +342,68 @@ export class DatabaseService{
             throw new NotFoundException("(fatal) databaseService: Cannot find user");
         }
 
-        const requestsFound:RequestEntity[] = await this.requestRegister.find({
+        const collabRequestsFound:UserRequestEntity[] = await this.userRequestRegister.find({
             where: {requestor: userFound}
         })
 
-        if(requestsFound.length == 0){
-            throw new NotFoundException("there is no requests associated with this user");
+        const rsrcRequestsFound:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({
+            where: {requestor : userFound}
+        })
+        const result:RequestDto[] = []
+        for(const r of collabRequestsFound){
+            result.push(this.parseUserRequestToRequestDto(r))
         }
-
-        return requestsFound.map((request)=>{
-            return {
-                requestType:request.request_type,
-                object_affected:request.object_affected,
-                object_affecting:request.object_affecting,
-                requestor:user
+        for(const r of rsrcRequestsFound){
+            result.push(this.parseResourceRequestToRequestDto(r))
+        }
+        if(result.length == 0){
+            throw new NotFoundException("No requests were found");
+        }
+        return result
+    }
+    private parseUserRequestToRequestDto(r:UserRequestEntity):RequestDto{
+        return {
+            request_id : r.request_id,
+            requestType: r.request_type,
+            requestor: r.requestor.user_id,
+            status:r.approved
+        }
+    }
+    private parseResourceRequestToRequestDto(r:ResourceRequestEntity):RequestDto{
+        switch(r.request_type){
+            case(RequestObject.uploadRequest):{
+                return {
+                    request_id : r.request_id,
+                    requestType: r.request_type,
+                    requestor: r.requestor.user_id,
+                    obj_affecting: r.object_affecting!.rsrc_id,
+                    status : r.approved
+                    
+                }
             }
-        });
+            case(RequestObject.updateRequest):{
+                return{
+                    request_id : r.request_id,
+                    requestType: r.request_type,
+                    requestor : r.requestor.user_id,
+                    obj_affecting : r.object_affecting!.rsrc_id,
+                    obj_affected : r.object_affected!.rsrc_id,
+                    status : r.approved
+                }
+            }
+            case(RequestObject.deleteRequest):{
+                return{
+                    request_id : r.request_id,
+                    requestType: r.request_type,
+                    requestor: r.requestor.user_id,
+                    obj_affected : r.object_affected!.rsrc_id,
+                    status : r.approved
+                }
+            }
+            default:{
+                throw new InternalServerErrorException("(DatabaseService): Cannot parse request type")
+            }
+        }
     }
 
     async searchResourcesByCollab(user: User): Promise<ResultDto[]>{
@@ -444,36 +467,14 @@ export class DatabaseService{
     }
 
     async getRequests(){
-        const requests:RequestEntity[] =  await this.requestRegister.find();
-        const toReturn:{req_id:number;req_type:string; object_affected?:number,object_affecting?:number}[] = [];
-        for(const req of requests){
-            switch(req.request_type){
-                case(RequestObject.collabRequest || RequestObject.deleteRequest):{
-                    toReturn.push({
-                        req_id : req.request_id,
-                        req_type : req.request_type,
-                        object_affected : req.object_affected
-                    })
-                    break;
-                }
-                case(RequestObject.uploadRequest):{
-                    toReturn.push({
-                        req_id : req.request_id,
-                        req_type : req.request_type,
-                        object_affecting : req.object_affecting
-                    })
-                    break;
-                }
-                case(RequestObject.updateRequest):{
-                    toReturn.push({
-                        req_id : req.request_id,
-                        req_type : req.request_type,
-                        object_affected: req.object_affected,
-                        object_affecting : req.object_affecting
-                    })
-                    break;
-                }
-            }
+        const userRequests:UserRequestEntity[] = await this.userRequestRegister.find({})
+        const rsrcRequests:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({})
+        const toReturn:RequestDto[] = [];
+        for(const r of userRequests){
+            toReturn.push(this.parseUserRequestToRequestDto(r))
+        }
+        for(const r of rsrcRequests){
+            toReturn.push(this.parseResourceRequestToRequestDto(r))
         }
         if(toReturn.length == 0){
             throw new NotFoundException("There are no requests");
@@ -482,41 +483,81 @@ export class DatabaseService{
     }
 
     async getRequest(requestId:number){
-        //first get the requestEntity to know which type of requests we are dealing with
-        const requestFound = await this.requestRegister.findOne({
-            where : {request_id : requestId}
+        const requestFound = await this.baseRequestRegister.findOne({
+            where : {request_id:requestId}
         })
         if(!requestFound){
             throw new NotFoundException("Cannot found request");
         }
         //now, check the type
-        switch(requestFound.request_type){
-            case(RequestObject.collabRequest):{
-                //so here the most important thing is to get the user information
-                const user = await this.userRepository.findOne({
-                    where:{user_id : requestFound.object_affected as number}
-                })
-                //TO FIX: ¿What if the user was deleted? fix request model
-                if(!user){
-                    throw new NotFoundException("Cannot found user on the request");
-                }
-                return {
-                    requestType: requestFound.request_type,
-                    requestor: user,
-                    object_affected: user
-                }
-            }
-            case(RequestObject.uploadRequest):{
-                break;
-            }
-            case(RequestObject.updateRequest):{
-                break;
-            }
-            case(RequestObject.deleteRequest):{
-                break;
-            }
-        }
+        return requestFound;
+    }
 
+    async addRoleToUser(userId:number,role:string){
+        //first, find the user
+        const user = await this.userRepository.findOne({
+            where:{user_id : userId},
+            relations:{
+                roles:true,
+                permits:true
+            }
+        })
+        if(!user){
+            throw new NotFoundException("No user found")
+        }
+        const roleEnt = await this.roleRespository.findOne({
+            where: {role_name : role},
+            relations:{
+                permitsAllowed: true
+            }
+        })
+        if(!roleEnt){
+            throw new NotFoundException("No role found")
+        }
+        //update
+        user.roles.push(roleEnt)
+        for(const p of roleEnt.permitsAllowed){
+            user.permits.push(p)
+        }
+        //save updated object
+        await this.userRepository.save(user)
+        return
+    }
+
+    async deleteResource(rsrcId:number){
+        const resource = await this.resourceRepository.findOne({
+            where: {rsrc_id : rsrcId}
+        })
+        if(!resource){
+            throw new NotFoundException("No resource found for deletion")
+        }
+        await this.resourceRepository.remove(resource)
+    }
+
+    async uploadResource(rsrcId:number){
+        const resource = await this.resourceRepository.findOne({
+            where: {rsrc_id: rsrcId},
+            relations:{
+                policy:true
+            }
+        })
+        if(!resource){
+            throw new NotFoundException("No resource found for upload")
+        }
+        resource.policy.canBeIndexed = true;
+        await this.resourceRepository.save(resource);
+    }
+
+    async denyRequest(reqId:number){
+        const request = await this.baseRequestRegister.findOne({
+            where:{request_id : reqId}
+        })
+        if(!request){
+            throw new NotFoundException("Request not found");
+        }
+        request.approved = 'DENIED'
+        this.baseRequestRegister.save(request)
+        return
     }
 
     private convertRawResultToDto(raw:{id:number,name:string,author_name:string}[]):ResultDto[]{

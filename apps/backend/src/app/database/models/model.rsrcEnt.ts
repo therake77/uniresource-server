@@ -4,6 +4,7 @@ import { ResourcePolicy } from "./model.policy";
 import { AuthorEntity } from "./model.author";
 import { UserEntity } from "./model.user";
 import { AccessRegisterEntity } from "./accessRegister";
+import { ResourceRequestEntity } from "./model.requests";
 
 @Entity()
 export class ResourceEntity{
@@ -33,4 +34,11 @@ export class ResourceEntity{
 
     @OneToMany(()=>AccessRegisterEntity,(activity)=>(activity.resourceAccessed))
     accessRegisterEntries?:AccessRegisterEntity[];
+
+    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.object_affected),{nullable: true})
+    requestsAsAffected?: ResourceRequestEntity[];
+
+    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.object_affecting),{nullable: true})
+    requestsAsAffecting?: ResourceRequestEntity[];
+
 }

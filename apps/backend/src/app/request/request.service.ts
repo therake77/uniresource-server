@@ -58,7 +58,7 @@ export class RequestService{
 
         const request:RequestObject = {
             requestType: RequestObject.uploadRequest,
-            requestor: userFound,
+            requestor: userFound.id,
             object_affecting: newRsrc
         }
 
@@ -105,10 +105,10 @@ export class RequestService{
             responsible : userFound
         }
 
-        this.databaseService.saveRequest({
-            requestor : userFound,
+        return await this.databaseService.saveRequest({
+            requestor : userFound.id,
             requestType : RequestObject.updateRequest,
-            object_affected : resourceToUpdate,
+            object_affected : resourceToUpdate.rsrc_id,
             object_affecting : newResource
         })
     }
@@ -129,9 +129,9 @@ export class RequestService{
 
         //construct the request object
         return await this.databaseService.saveRequest({
-            requestor : userFound,
+            requestor : userFound.id,
             requestType : RequestObject.deleteRequest,
-            object_affected : resourceFound,
+            object_affected : resourceFound.rsrc_id,
         })
     }
 
@@ -153,7 +153,7 @@ export class RequestService{
         //create and save the request
         return await this.databaseService.saveRequest({
             requestType:RequestObject.collabRequest,
-            requestor: user,
+            requestor: user.id,
             object_affected: user.id
         })
     }

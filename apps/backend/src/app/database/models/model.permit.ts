@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
 import { RoleEntity } from "./model.role";
 import { UserEntity } from "./model.user";
 
@@ -7,7 +7,7 @@ export class PermitEntity{
     @PrimaryGeneratedColumn()
     permit_id:number;
 
-    @Column()
+    @Column({unique:true})
     permit_name:string;
     
     @Column({type:'text'})
