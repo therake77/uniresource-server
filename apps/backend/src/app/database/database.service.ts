@@ -324,11 +324,6 @@ export class DatabaseService{
         if(filters.type){
             qb.andWhere('metadata.type = :type',{type : filters.type})
         }
-<<<<<<< HEAD
-        //qb.select(['metadata.rsrc_id AS id','metadata.name AS name'])
-        console.log(qb.getSql())
-        return qb.getRawMany()
-=======
         qb.select(['resource.rsrc_id AS id', 'metadata.name AS name', 'author.author_name AS author_name'])
         const raw_result:{id: number; name:string; author_name:string }[] =  await qb.getRawMany<{id: number; name:string; author_name:string}>();
         
@@ -337,7 +332,6 @@ export class DatabaseService{
         }
 
         return this.convertRawResultToDto(raw_result);
->>>>>>> server
     }
 
     async getRequestsByCollab(user: User):Promise<RequestDto[]>{

@@ -37,10 +37,7 @@ testem.log
 #*/.env
 docker/*
 storage/*
-<<<<<<< HEAD
-=======
 !storage/.gitkeep
->>>>>>> server
 
 # System Files
 .DS_Store

@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-import { Body, Controller, Get, Param, UseGuards, Request, NotFoundException, UsePipes, ValidationPipe } from "@nestjs/common";
-import { JwtGuard } from "../auth/guards/jwt.guard";
-import { SearchResourceDto } from "../models/dto/searchResource";
-import { AccessService } from "../access/access.service";
-
-@Controller('user')
-export class UserController{
-    constructor(
-        private readonly accessService:AccessService
-    ){}
-
-    @Get('resources')
-=======
 import { Body, Controller, Get, Param, UseGuards, UsePipes, ValidationPipe, Post, Req, Res } from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { SearchResourceDto } from "../models/dto/searchResource";
@@ -30,7 +16,6 @@ export class UserController{
     ){}
 
     @Get('visualize/:id')
->>>>>>> server
     @UseGuards(JwtGuard)
     @UsePipes(ValidationPipe)
     async getResourceImages(@Req() req : Request & { user: Token },@Res() res:Response ,@Param('id') id: number){
@@ -66,19 +51,6 @@ export class UserController{
 
     @Get('search')
     @UseGuards(JwtGuard)
-<<<<<<< HEAD
-    @UsePipes(ValidationPipe)
-    async search(@Request() rq:any, @Body() searchDto:SearchResourceDto){
-        console.log(searchDto);
-        const result = await this.accessService.searchResource(searchDto)
-        console.log(result)
-        if(result.length === 0){
-            throw new NotFoundException;
-        }
-        return result;
-    }
-
-=======
     async search(@Body() searchDto:SearchResourceDto){
         return await this.accessService.searchResource(searchDto);
     }
@@ -94,5 +66,4 @@ export class UserController{
     async getResourceReference(@Req() req: { user: Token }, @Param('id') id:number){
         return await this.accessService.createResourceReference(id,req.user);
     }
->>>>>>> server
 }
