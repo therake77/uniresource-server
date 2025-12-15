@@ -4,7 +4,7 @@ import { ResourceEntity } from "./model.rsrcEnt";
 @Entity()
 export class ResourcePolicy{
     @PrimaryColumn()
-    rsrc_id:number;
+    rsrc_id?:number;
 
     @Column()
     canBeDownload:boolean;
@@ -14,6 +14,6 @@ export class ResourcePolicy{
 
     @OneToOne(()=>(ResourceEntity),(rsrEnt)=>(rsrEnt.policy))
     @JoinColumn({name:"rsrc_id"})
-    rsrc_ent:ResourceEntity;
+    rsrc_ent?:ResourceEntity;
 
 }

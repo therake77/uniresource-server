@@ -1,8 +1,9 @@
-import { Body, Controller, Post, UseGuards, Request, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Post, Req, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
 import { CreateUserDto } from "../models/dto/createUser.dto";
 import { AuthService } from "./auth.service";
 import { LocalGuard } from "./guards/local.guard";
-import { CreateLoginDto } from "../models/dto/login.dto";
+import { LoginDto } from "../models/dto/login.dto";
+import type { Request } from "express";
 
 @Controller('auth')
 export class AuthController{
@@ -13,14 +14,15 @@ export class AuthController{
     @Post('login')
     @UsePipes(ValidationPipe)
     @UseGuards(LocalGuard)
-    async login(@Request() req:any,@Body() logindto:CreateLoginDto){
+    async login(@Req() req:Request,@Body() logindto:LoginDto){
+        console.log(req.user);
         return req.user;
     }
 
-    @Post('register/user')
+    @Post('register')
     @UsePipes(ValidationPipe)
-    async createNewUser(@Body() user:CreateUserDto){
-        this.authService.registerNewUser(user);
+    async createProfile(@Body() user:CreateUserDto){
+        await this.authService.registerUser(user);
         return
     }
 

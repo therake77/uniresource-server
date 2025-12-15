@@ -5,6 +5,10 @@ import { DatabaseModule } from "../database/database.module";
 
 @Module({
     imports:[AuthModule,DatabaseModule],
+<<<<<<< HEAD
+=======
+    controllers:[],
+>>>>>>> server
     providers:[AccessService],
     exports:[AccessService]
 })

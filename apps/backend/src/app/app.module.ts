@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
+import { CollaboratorModule } from './collaboration/collaboration.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -11,7 +13,9 @@ import { UserModule } from './user/user.module';
       isGlobal:true,
       envFilePath:'.env',
     }),
-    UserModule
+    UserModule,
+    CollaboratorModule,
+    AdminModule
   ],
   controllers: [AppController],
   providers: [AppService],

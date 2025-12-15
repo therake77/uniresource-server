@@ -1,8 +1,18 @@
-import { IsNotEmpty } from 'class-validator'
+import { Transform } from 'class-transformer';
+import { IsEmail, IsIn, IsNotEmpty } from 'class-validator'
+import { Role } from '../common/roles';
 
-export class CreateLoginDto{
+export class LoginDto{
+    
     @IsNotEmpty()
-    username:string;
+    @IsEmail()
+    email:string;
+    
     @IsNotEmpty()
     password:string;
+
+    @IsNotEmpty()
+    @Transform(({value}) => typeof value == 'string' ? value.toUpperCase() : value)
+    @IsIn([Role.USER,Role.COLLAB,Role.ADMIN])
+    roleRequested:string;
 }

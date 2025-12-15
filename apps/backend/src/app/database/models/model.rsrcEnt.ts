@@ -1,8 +1,10 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { ResourceMetadataEntity } from "./model.rsrcMeta";
 import { ResourcePolicy } from "./model.policy";
 import { AuthorEntity } from "./model.author";
 import { UserEntity } from "./model.user";
+import { AccessRegisterEntity } from "./accessRegister";
+import { ResourceRequestEntity } from "./model.requests";
 
 @Entity()
 export class ResourceEntity{
@@ -12,10 +14,14 @@ export class ResourceEntity{
     @Column()
     path:string;
 
-    @OneToOne(()=>(ResourceMetadataEntity),(metadata)=>(metadata.rsrc_ent))
+    @OneToOne(
+        ()=>(ResourceMetadataEntity),
+        (metadata)=>(metadata.rsrc_ent),
+        {cascade:true}
+    )
     resourceMetadata:ResourceMetadataEntity;
 
-    @OneToOne(()=>(ResourcePolicy),(policy)=>(policy.rsrc_ent))
+    @OneToOne(()=>(ResourcePolicy),(policy)=>(policy.rsrc_ent),{cascade:true})
     policy:ResourcePolicy;
 
     @ManyToMany(()=>(AuthorEntity),(author)=>(author.resources))
@@ -23,7 +29,16 @@ export class ResourceEntity{
     authors:AuthorEntity[];
 
     @ManyToOne(()=>(UserEntity),(user)=>(user.responsible_of))
-    @JoinColumn()
+    @JoinColumn({name: "policy_id"})
     responsible:UserEntity;
+
+    @OneToMany(()=>AccessRegisterEntity,(activity)=>(activity.resourceAccessed))
+    accessRegisterEntries?:AccessRegisterEntity[];
+
+    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.object_affected),{nullable: true})
+    requestsAsAffected?: ResourceRequestEntity[];
+
+    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.object_affecting),{nullable: true})
+    requestsAsAffecting?: ResourceRequestEntity[];
 
 }

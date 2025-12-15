@@ -1,21 +1,18 @@
 
-export interface Permit{
-    canAccess:boolean
+export class Permit{
+    canAccess:boolean = false
 }
 
-export class UserPermit implements Permit{
-    canAccess: boolean;
-    canDownload:boolean;
-    canVisualize:boolean;
+export class UserPermit extends Permit{
+    canDownload:boolean = false;
+    canVisualize:boolean = false;
 }
 
-export class AdminPermits implements Permit{
-    canAccess:boolean;
-    canModify:boolean;
-    canMaintain:boolean;
+export class AdminPermits extends Permit{
+    canModify:boolean = false;
+    canMaintain:boolean = false;
 }
 
-export class ColabPermits implements Permit{
-    canAccess: boolean;
-    canPublish:boolean;
+export class ColabPermits extends UserPermit{
+    canUpload:boolean = false;
 }

@@ -2,20 +2,29 @@ import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from 'passport-local';
 import { AuthService } from "../auth.service";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { LoginDto } from "../../models/dto/login.dto";
+import { Request } from "express";
+
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy){
     
     constructor(private authService:AuthService){
-        super();
+        super({
+            usernameField: 'email',
+            passwordField: 'password',
+            passReqToCallback: true
+        });
     }
 
-    override validate(username:string, password:string) {
-        const user = this.authService.validateUser(username,password);
-        if(!user){
+    override validate(req: Request, email: string, password: string) {
+        const loginDto = req.body as LoginDto;
+        console.log(loginDto);
+        const token = this.authService.createToken(loginDto);
+        if(!token){
             throw UnauthorizedException;
         }
-        return user;
+        return token;
     }
 
 }
