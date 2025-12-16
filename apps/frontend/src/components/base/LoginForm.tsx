@@ -34,10 +34,26 @@ const LoginForm = () => {
       alert(`Error: ${(await res.json()).message}`)
       return;
     }
-
     const token = await res.text();
-  
     localStorage.setItem('access_token',token);
+
+    switch(type){
+      case("USER"):{
+        navigate("/user");
+        break;
+      }
+      case("COLLAB"):{
+        navigate("/collab");
+        break;
+      }
+      case("ADMIN"):{
+        navigate("/admin")
+        break;
+      }
+      default:
+        navigate("/user");
+        break;
+    }
     return;
   };
 
