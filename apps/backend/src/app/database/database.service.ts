@@ -303,6 +303,7 @@ export class DatabaseService{
         .where('policy.canBeIndexed = TRUE')
         if(filters.authors){
             qb.andWhere('author.author_name IN (...:author_names)',{author_names:filters.authors});
+            console.log("author field detected")
         }
         if(filters.course){
             qb.andWhere('metadata.course = :course',{course: filters.course})
@@ -312,6 +313,7 @@ export class DatabaseService{
         }
         if(filters.name){
             qb.andWhere('metadata.name = :name',{name : filters.name})
+            console.log(`name field detected ${filters.name}`)
         }
         if(filters.school){
             qb.andWhere('metadata.school = :school',{school:filters.school})
