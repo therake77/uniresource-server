@@ -4,7 +4,7 @@ import { AuthService } from "../auth/auth.service";
 import { Token } from "../models/common/token";
 import { NewMetadata, NewResource, NewResourceDto } from "../models/common/newResourceDto";
 import { ColabPermits } from "../models/common/permits";
-import { RequestObject } from "../models/common/requestDto";
+import { RequestDto, RequestObject } from "../models/common/requestDto";
 import { Role } from "../models/common/roles";
 
 @Injectable()
@@ -14,12 +14,12 @@ export class RequestService{
         private readonly authService:AuthService
     ){}
 
-    async getRequestsOfUser(token:Token):Promise<RequestObject[]>{
+    async getRequestsOfUser(token:Token):Promise<RequestDto[]>{
         const user = await this.authService.getUser(token);
         if(!user){
             throw new NotFoundException("User cannot be found");
         }
-        return this.databaseService.getRequestsByCollab(user);
+        return await this.databaseService.getRequestsByCollab(user);
     }
 
     async requestUpload(uploadDate:Date, filename:string,newResourceDto:NewResourceDto,token:Token){

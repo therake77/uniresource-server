@@ -211,6 +211,7 @@ export class DatabaseService{
 
     private async saveNewResourceIntoDatabase(user:UserEntity,toBeSaved:NewResource):Promise<ResourceEntity>{
         const authorsFound = await this.convertAndSafeRawAuthors(toBeSaved.authors);
+        console.log(authorsFound);
         if(authorsFound.length == 0){
             throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
         }
@@ -345,11 +346,19 @@ export class DatabaseService{
         }
 
         const collabRequestsFound:UserRequestEntity[] = await this.userRequestRegister.find({
-            where: {requestor: userFound}
+            where: {requestor: userFound},
+            relations:{
+                requestor:true
+            }
         })
 
         const rsrcRequestsFound:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({
-            where: {requestor : userFound}
+            where: {requestor : userFound},
+            relations:{
+                requestor:true,
+                object_affected:true,
+                object_affecting:true
+            }
         })
         const result:RequestDto[] = []
         for(const r of collabRequestsFound){
@@ -410,7 +419,13 @@ export class DatabaseService{
 
     async searchResourcesByCollab(user: User): Promise<ResultDto[]>{
         const userEnt= await this.userRepository.findOne({
-            where:{user_id: user.id}
+            where:{user_id: user.id},
+            relations:{
+                responsible_of:{
+                    authors:true,
+                    resourceMetadata:true
+                }
+            }
         })
         if(!userEnt){
             throw new NotFoundException("User entity cannot be found");

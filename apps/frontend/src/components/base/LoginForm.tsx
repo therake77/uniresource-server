@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -145,10 +145,10 @@ const LoginForm = () => {
       {/* Enlace a registro */}
       <div className="mt-6 text-center">
         <p className="text-muted-foreground">
-          ¿No tienes una cuenta?{" "}
-          <a href="#" className="font-semibold text-foreground hover:text-primary transition-colors">
+          ¿No tienes una cuenta? {" "}
+          <Link to="/register" className="font-semibold text-foreground hover:text-primary transition-colors">
             Regístrate
-          </a>
+          </Link>
         </p>
       </div>
     </div>
