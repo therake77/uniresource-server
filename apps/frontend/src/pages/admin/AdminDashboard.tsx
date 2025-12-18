@@ -23,6 +23,9 @@ import { useState } from "react";
 import AdminSidebar from "@/pages/admin/AdminSidebar";
 import AdminHeader from "@/pages/admin/AdminHeader";
 import ResourcesSection from "@/pages/admin/ResourcesSection";
+import UsersSection from "@/pages/admin/UsersSection";
+import MaintenanceSection from "@/pages/admin/MantenenceSection";
+import RequestsSection from "@/pages/admin/RequestSection";
 
 const AdminDashboard = () => {
   // Estado para controlar la sección activa del sidebar
@@ -42,23 +45,11 @@ const AdminDashboard = () => {
       case "recursos":
         return <ResourcesSection />;
       case "usuarios":
-        return (
-          <div className="text-center text-muted-foreground py-12">
-            Sección de usuarios en desarrollo...
-          </div>
-        );
+        return <UsersSection />;
       case "solicitudes":
-        return (
-          <div className="text-center text-muted-foreground py-12">
-            Sección de solicitudes en desarrollo...
-          </div>
-        );
+        return <RequestsSection />;
       case "mantenimiento":
-        return (
-          <div className="text-center text-muted-foreground py-12">
-            Sección de mantenimiento en desarrollo...
-          </div>
-        );
+        return <MaintenanceSection />;
       default:
         return <ResourcesSection />;
     }
