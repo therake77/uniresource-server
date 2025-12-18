@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -15,15 +15,46 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
 
   // Manejador del envío del formulario
-  const handleSubmit = (e: React.FormEvent, type: string) => {
+  const handleSubmit = async (e: React.FormEvent, type: string) => {
     e.preventDefault();
-    console.log(`Login tipo: ${type}, Email: ${email}`);
-
-    // Redirigir al dashboard de administrador
-    if (type === "administrador") {
-      navigate("/admin");
+    console.log("Hello");
+    
+    const res = await fetch("http://localhost:3000/api/auth/login",{
+      method : 'POST',
+      headers : {
+        "Content-Type" : "application/json"
+      },
+      body : JSON.stringify({
+        email : email,
+        password : password,
+        roleRequested : type
+      }),
+    })
+    if(!res.ok){
+      alert(`Error: ${(await res.json()).message}`)
+      return;
     }
-    // Aquí iría la lógica de autenticación para otros tipos
+    const token = await res.text();
+    localStorage.setItem('access_token',token);
+
+    switch(type){
+      case("USER"):{
+        navigate("/user");
+        break;
+      }
+      case("COLLAB"):{
+        navigate("/collab");
+        break;
+      }
+      case("ADMIN"):{
+        navigate("/admin")
+        break;
+      }
+      default:
+        navigate("/user");
+        break;
+    }
+    return;
   };
 
   return (
@@ -49,7 +80,7 @@ const LoginForm = () => {
       </div>
 
       {/* Formulario de login */}
-      <form onSubmit={(e) => handleSubmit(e, "normal")} className="space-y-5">
+      <form className="space-y-5">
         {/* Campo de Email */}
         <div className="space-y-2">
           <Label htmlFor="email" className="text-foreground font-medium">
@@ -84,7 +115,8 @@ const LoginForm = () => {
         <div className="space-y-3 pt-4">
           {/* Botón principal - Inicia sesión */}
           <Button
-            type="submit"
+            type="button"
+            onClick={(e)=> handleSubmit(e,"USER")}
             className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg"
           >
             Inicia sesión
@@ -93,7 +125,7 @@ const LoginForm = () => {
           {/* Botón secundario - Colaborador */}
           <Button
             type="button"
-            onClick={(e) => handleSubmit(e, "colaborador")}
+            onClick={(e) => handleSubmit(e, "COLLAB")}
             className="w-full h-11 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium rounded-lg"
           >
             Inicia sesión (colaborador)
@@ -102,7 +134,7 @@ const LoginForm = () => {
           {/* Botón secundario - Administrador */}
           <Button
             type="button"
-            onClick={(e) => handleSubmit(e, "administrador")}
+            onClick={(e) => handleSubmit(e, "ADMIN")}
             className="w-full h-11 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium rounded-lg"
           >
             Inicia sesión (administrador)
@@ -113,10 +145,10 @@ const LoginForm = () => {
       {/* Enlace a registro */}
       <div className="mt-6 text-center">
         <p className="text-muted-foreground">
-          ¿No tienes una cuenta?{" "}
-          <a href="#" className="font-semibold text-foreground hover:text-primary transition-colors">
+          ¿No tienes una cuenta? {" "}
+          <Link to="/register" className="font-semibold text-foreground hover:text-primary transition-colors">
             Regístrate
-          </a>
+          </Link>
         </p>
       </div>
     </div>

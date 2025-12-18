@@ -35,6 +35,6 @@ export class ResourceMetadataEntity{
 
     @OneToOne(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.resourceMetadata))
     @JoinColumn({ name: 'rsrc_id'})
-    rsrc_ent:ResourceEntity;
+    rsrc_ent?:ResourceEntity;
 
 }

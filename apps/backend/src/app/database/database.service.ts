@@ -1,7 +1,6 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { EntityTarget, In, ObjectLiteral, Repository } from "typeorm";
-import { DataSource } from "typeorm";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { In, Repository } from "typeorm";
 import { UserEntity } from "./models/model.user";
 import { User } from "../models/common/user";
 import { CreateUserDto } from "../models/dto/createUser.dto";
@@ -11,18 +10,23 @@ import { SearchResourceDto } from "../models/dto/searchResource";
 import { PermitEntity } from "./models/model.permit";
 import { RoleEntity } from "./models/model.role";
 import { ResourceObject } from "../models/common/resource_obj";
-import { NotFoundError } from "rxjs";
 import { ResourceMetadataEntity } from "./models/model.rsrcMeta";
 import { ResourceReference } from "../models/common/resource_ref";
 import { ResourcePolicy } from "./models/model.policy";
 import { Policy } from "../models/common/policy";
+import { ResultDto } from "../models/dto/result.dto";
+import { NewResource } from "../models/common/newResourceDto";
+import { AuthorEntity } from "./models/model.author";
+import { AccessRegisterEntity } from "./models/accessRegister";
+import { RequestDto, RequestObject } from "../models/common/requestDto";
+
+import { Role } from "../models/common/roles";
+import { RequestEntity, ResourceRequestEntity, UserRequestEntity } from "./models/model.requests";
 
 @Injectable()
 export class DatabaseService{
     
     constructor(
-        @InjectDataSource()
-        private readonly dataSource:DataSource,
         @InjectRepository(UserEntity)
         private readonly userRepository:Repository<UserEntity>,
         @InjectRepository(ResourceEntity)
@@ -32,7 +36,19 @@ export class DatabaseService{
         @InjectRepository(RoleEntity)
         private readonly roleRespository: Repository<RoleEntity>,
         @InjectRepository(ResourceMetadataEntity)
-        private readonly rsrcMetadataRepository: Repository<ResourceMetadataEntity>
+        private readonly rsrcMetadataRepository: Repository<ResourceMetadataEntity>,
+        @InjectRepository(ResourcePolicy)
+        private readonly rsrcPolicyRepository: Repository<ResourcePolicy>,
+        @InjectRepository(AuthorEntity)
+        private readonly authorRepository: Repository<AuthorEntity>,
+        @InjectRepository(AccessRegisterEntity)
+        private readonly accessRegister: Repository<AccessRegisterEntity>,
+        @InjectRepository(UserRequestEntity)
+        private readonly userRequestRegister: Repository<UserRequestEntity>,
+        @InjectRepository(ResourceRequestEntity)
+        private readonly rsrcRequestRegister: Repository<ResourceRequestEntity>,
+        @InjectRepository(RequestEntity)
+        private readonly baseRequestRegister: Repository<RequestEntity>
     ){}
 
     private async fromPermitToDatabaseEntities(permit:Permit): Promise<PermitEntity[]>{
@@ -90,22 +106,42 @@ export class DatabaseService{
         const rsrcEntFound = await this.resourceRepository.findOne({
             where: {rsrc_id: id}
         })
-        if(rsrcEntFound == null){
+        if(!rsrcEntFound){
             return null;
         }
+
         const rsc_policy = this.fromResourcePolicyToPolicy(rsrcEntFound.policy);
         
 
         const rsrcObj:ResourceObject = {
-            rsrc_id : rsrcEntFound.rsrc_id,
+            rsrc_id : rsrcEntFound.rsrc_id!,
             path : rsrcEntFound.path,
-            policies : rsc_policy
+            policies : rsc_policy,
+            responsibleUserId: rsrcEntFound.responsible.user_id
         }
         return rsrcObj;
     }
 
     async registerAccessActivity(userId:number,rsrc_id:number, accessType:string){
+        //first find the user and the resource
+        const user = await this.userRepository.findOne({
+            where: {user_id : userId}
+        })
+        const resourceObj = await this.resourceRepository.findOne({
+            where: {rsrc_id : rsrc_id}
+        })
+        
+        if(!user || !resourceObj){
+            throw new NotFoundException("Cannot identify user or resourceObj");
+        }
 
+        //Now save in the register
+        this.accessRegister.save({
+            resourceAccessed: resourceObj,
+            accessedBy: user,
+            accessType: accessType
+        })
+        return
     }
 
     async findUser(userId:number,requestedRole:string):Promise<User | null>{
@@ -113,19 +149,19 @@ export class DatabaseService{
         .leftJoinAndSelect('u.roles','r')
         .leftJoinAndSelect('u.permits','p')
         .where('u.user_id = :id',{id:userId})
-        .andWhere('r.role_name := role',{role:requestedRole})
+        .andWhere('r.role_name = :role',{role:requestedRole})
         .getOne()
         if(userFound == null){
             return null;
         }
 
         let foundPermits: UserPermit | ColabPermits | AdminPermits;
-        if(requestedRole === 'USER'){
+        if(requestedRole === Role.USER){
             console.log(userFound.permits);
             foundPermits = await this.fromPermitEntityToPermit(userFound.permits,UserPermit);    
-        }else if(requestedRole === 'COLAB'){
+        }else if(requestedRole === Role.COLLAB){
             foundPermits = await this.fromPermitEntityToPermit(userFound.permits,ColabPermits);
-        }else if( requestedRole === 'ADMIN')
+        }else if( requestedRole === Role.ADMIN)
             foundPermits = await this.fromPermitEntityToPermit(userFound.permits,AdminPermits);
         else{
             return null;
@@ -141,22 +177,25 @@ export class DatabaseService{
         return user;
     }
 
-    async findResourceReference(rsrc_id:number):Promise<ResourceReference | null>{
+    async findResourceReference(id:number):Promise<ResourceReference | null>{
 
         const rsrcRefFound:ResourceMetadataEntity | null = await this.rsrcMetadataRepository.findOne({
-            where: {rsrc_id : rsrc_id}
+            where: {rsrc_id : id}
         })
+
+        if(!rsrcRefFound){
+            return null
+        }
 
         const authorsFound:string[] = await this.resourceRepository.createQueryBuilder('r')
         .leftJoinAndSelect('r.authors','a')
+        .where('r.rsrc_id = :id',{id:rsrcRefFound.rsrc_id})
         .select('a.author_name')
         .getRawMany<string>();
 
-        if(rsrcRefFound == null){
-            return null
-        }
+        
         const rsrc_ref:ResourceReference = {
-            rsrc_id : rsrcRefFound.rsrc_id,
+            rsrc_id : rsrcRefFound.rsrc_id!,
             name : rsrcRefFound.name,
             type : rsrcRefFound.type,
             publish_date : rsrcRefFound.publish_date,
@@ -170,11 +209,94 @@ export class DatabaseService{
         return rsrc_ref;
     }
 
-    saveRequest(request : any){
-
+    private async saveNewResourceIntoDatabase(user:UserEntity,toBeSaved:NewResource):Promise<ResourceEntity>{
+        const authorsFound = await this.convertAndSafeRawAuthors(toBeSaved.authors);
+        console.log(authorsFound);
+        if(authorsFound.length == 0){
+            throw new InternalServerErrorException("(databaseService) cannot found or create any author. skipping");
+        }
+        const resourceCreated = await this.resourceRepository.save({
+            path: toBeSaved.path,
+            resourceMetadata: {
+                name : toBeSaved.resourceMetadata.name,
+                type : toBeSaved.resourceMetadata.type,
+                publish_date : toBeSaved.resourceMetadata.publish_date,
+                upload_date : toBeSaved.resourceMetadata.upload_date,
+                course : toBeSaved.resourceMetadata.course,
+                semester : toBeSaved.resourceMetadata.semester,
+                school : toBeSaved.resourceMetadata.school,
+                description : toBeSaved.resourceMetadata.description,
+            },
+            policy:{
+                canBeDownload: toBeSaved.policy.canBeDownloaded,
+                canBeIndexed: toBeSaved.policy.canBeIndexed
+            },
+            authors: authorsFound,
+            responsible: user,
+        })
+        return resourceCreated;
     }
 
-    async findResourceByCriteria(filters:SearchResourceDto){
+    async saveRequest(request : RequestObject):Promise<number>{
+        const user = await this.userRepository.findOne({
+            where: {user_id : request.requestor}
+        })
+
+        if(!user){
+            throw new NotFoundException("saveRequest: User not found");
+        }
+        if(request.requestType === RequestObject.collabRequest){
+            const requestCreated = await this.userRequestRegister.save({
+                requestor:user,
+                request_type: request.requestType,
+            })
+            return requestCreated.request_id;
+        }
+        else if(request.requestType === RequestObject.uploadRequest){
+            //first save the new resource information in the database
+            const toBeSaved = request.object_affecting as NewResource
+            const new_rsrc = await this.saveNewResourceIntoDatabase(user,toBeSaved);
+            const requestCreated = await this.userRequestRegister.save({
+                requestor:user,
+                request_type: request.requestType,
+                object_affecting : new_rsrc
+            })
+            return requestCreated.request_id
+        }
+        else if(request.requestType === RequestObject.updateRequest){
+            const toModify = await this.resourceRepository.findOne({
+                where : {rsrc_id : request.object_affected as number}
+            })
+            if(!toModify){
+                throw new NotFoundException("Resource to modify cannot be found");
+            }
+            const toBeSaved = request.object_affecting as NewResource
+            const new_rsrc = await this.saveNewResourceIntoDatabase(user,toBeSaved);
+            return (await this.rsrcRequestRegister.save({
+                requestor: user,
+                request_type: request.requestType,
+                object_affected:toModify,
+                object_affecting: new_rsrc
+            })).request_id
+        }
+        else if( request.requestType === RequestObject.deleteRequest){
+            const toDelete = await this.resourceRepository.findOne({
+                where: {rsrc_id : request.object_affected as number}
+            })
+            if(!toDelete){
+                throw new NotFoundException("Resource to delete cannot be found")
+            }
+            return (await this.rsrcRequestRegister.save({
+                requestor: user,
+                request_type: request.requestType,
+                object_affected : toDelete
+            })).request_id
+        }else{
+            throw new BadRequestException("Request type is not valid");
+        }
+    }
+
+    async findResourceByCriteria(filters:SearchResourceDto): Promise<ResultDto[]>{
         const qb = this.resourceRepository.createQueryBuilder('resource')
         qb.innerJoinAndSelect('resource.resourceMetadata','metadata')
         .leftJoinAndSelect('resource.authors','author')
@@ -182,6 +304,7 @@ export class DatabaseService{
         .where('policy.canBeIndexed = TRUE')
         if(filters.authors){
             qb.andWhere('author.author_name IN (...:author_names)',{author_names:filters.authors});
+            console.log("author field detected")
         }
         if(filters.course){
             qb.andWhere('metadata.course = :course',{course: filters.course})
@@ -191,6 +314,7 @@ export class DatabaseService{
         }
         if(filters.name){
             qb.andWhere('metadata.name = :name',{name : filters.name})
+            console.log(`name field detected ${filters.name}`)
         }
         if(filters.school){
             qb.andWhere('metadata.school = :school',{school:filters.school})
@@ -201,20 +325,125 @@ export class DatabaseService{
         if(filters.type){
             qb.andWhere('metadata.type = :type',{type : filters.type})
         }
-        qb.select(['metadata.name AS name'])
-        const result:{id: number; name:string}[] =  await qb.getRawMany<{ id: number; name: string }>();
-        if(result.length == 0){
+        qb.select(['resource.rsrc_id AS id', 'metadata.name AS name', 'author.author_name AS author_name'])
+        const raw_result:{id: number; name:string; author_name:string }[] =  await qb.getRawMany<{id: number; name:string; author_name:string}>();
+        
+        if(raw_result.length == 0){
             throw new NotFoundException();
         }
-        return result;
+
+        return this.convertRawResultToDto(raw_result);
     }
 
-    getRequestsByCollab(user: User){
+    async getRequestsByCollab(user: User):Promise<RequestDto[]>{
+        
+        const userFound = await this.userRepository.findOne({
+            where: {user_id : user.id}
+        })
+        
+        if(!userFound){
+            throw new NotFoundException("(fatal) databaseService: Cannot find user");
+        }
 
+        const collabRequestsFound:UserRequestEntity[] = await this.userRequestRegister.find({
+            where: {requestor: userFound},
+            relations:{
+                requestor:true
+            }
+        })
+
+        const rsrcRequestsFound:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({
+            where: {requestor : userFound},
+            relations:{
+                requestor:true,
+                object_affected:true,
+                object_affecting:true
+            }
+        })
+        const result:RequestDto[] = []
+        for(const r of collabRequestsFound){
+            result.push(this.parseUserRequestToRequestDto(r))
+        }
+        for(const r of rsrcRequestsFound){
+            result.push(this.parseResourceRequestToRequestDto(r))
+        }
+        if(result.length == 0){
+            throw new NotFoundException("No requests were found");
+        }
+        return result
+    }
+    private parseUserRequestToRequestDto(r:UserRequestEntity):RequestDto{
+        return {
+            request_id : r.request_id,
+            requestType: r.request_type,
+            requestor: r.requestor.user_id,
+            status:r.approved
+        }
+    }
+    private parseResourceRequestToRequestDto(r:ResourceRequestEntity):RequestDto{
+        switch(r.request_type){
+            case(RequestObject.uploadRequest):{
+                return {
+                    request_id : r.request_id,
+                    requestType: r.request_type,
+                    requestor: r.requestor.user_id,
+                    obj_affecting: r.object_affecting!.rsrc_id,
+                    status : r.approved
+                    
+                }
+            }
+            case(RequestObject.updateRequest):{
+                return{
+                    request_id : r.request_id,
+                    requestType: r.request_type,
+                    requestor : r.requestor.user_id,
+                    obj_affecting : r.object_affecting!.rsrc_id,
+                    obj_affected : r.object_affected!.rsrc_id,
+                    status : r.approved
+                }
+            }
+            case(RequestObject.deleteRequest):{
+                return{
+                    request_id : r.request_id,
+                    requestType: r.request_type,
+                    requestor: r.requestor.user_id,
+                    obj_affected : r.object_affected!.rsrc_id,
+                    status : r.approved
+                }
+            }
+            default:{
+                throw new InternalServerErrorException("(DatabaseService): Cannot parse request type")
+            }
+        }
     }
 
-    searchResourcesByCollab(user: User){
+    async searchResourcesByCollab(user: User): Promise<ResultDto[]>{
+        const userEnt= await this.userRepository.findOne({
+            where:{user_id: user.id},
+            relations:{
+                responsible_of:{
+                    authors:true,
+                    resourceMetadata:true
+                }
+            }
+        })
+        if(!userEnt){
+            throw new NotFoundException("User entity cannot be found");
+        }
+        
+        const resources:ResourceEntity[] = userEnt.responsible_of;
+        
+        if(resources.length == 0){
+            throw new NotFoundException("Collaborator doesn't have any resources associated with him");
+        }
 
+        return resources.map((rsrc)=>{
+            return {
+                rsrc_id: rsrc.rsrc_id,
+                name: rsrc.resourceMetadata.name,
+                authors : rsrc.authors.map((author)=>(author.author_name))
+            }
+        })
     }
 
     async findUserWithPassword(email:string,passwrd:string, role: string):Promise<User|null>{
@@ -228,17 +457,16 @@ export class DatabaseService{
         .andWhere('r.role_name = :role',{role: role})
 
         const foundUser = await qb.getOne();
-        console.log(foundUser)
         if(!foundUser){
             return null
         }
         let foundPermits;
-        if(role === 'USER'){
+        if(role === Role.USER){
             console.log(foundUser.permits);
             foundPermits = await this.fromPermitEntityToPermit(foundUser.permits,UserPermit);    
-        }else if(role === 'COLAB'){
+        }else if(role === Role.COLLAB){
             foundPermits = await this.fromPermitEntityToPermit(foundUser.permits,ColabPermits);
-        }else if( role === 'ADMIN')
+        }else if( role === Role.ADMIN)
             foundPermits = await this.fromPermitEntityToPermit(foundUser.permits,AdminPermits);
         else{
             return null;
@@ -255,31 +483,134 @@ export class DatabaseService{
         return user;
     }
 
-    async buildReference(id: number){
-        const qb = this.resourceRepository.createQueryBuilder('r')
-        qb.innerJoin('r.metadata','m')
-        qb.innerJoin('r.authors','a')
-        qb.andWhere('m.rsrc_id = :id',{id:id})
-        qb.select([
-            'm.rsrc_id',
-            'm.name',
-            'm.type'
-        ])
-        //TODO(finish this)
-        return qb.getRawOne()
+    async getRequests(){
+        const userRequests:UserRequestEntity[] = await this.userRequestRegister.find({})
+        const rsrcRequests:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({})
+        const toReturn:RequestDto[] = [];
+        for(const r of userRequests){
+            toReturn.push(this.parseUserRequestToRequestDto(r))
+        }
+        for(const r of rsrcRequests){
+            toReturn.push(this.parseResourceRequestToRequestDto(r))
+        }
+        if(toReturn.length == 0){
+            throw new NotFoundException("There are no requests");
+        }
+        return toReturn;
     }
 
-    async findUserById(id:number){
-        return await this.userRepository.findOneBy({ user_id: id})
-    }   
-
-    getRespository<T extends ObjectLiteral> (entity: EntityTarget<T>): Repository<T> {
-        return this.dataSource.getRepository(entity);    
+    async getRequest(requestId:number){
+        const requestFound = await this.baseRequestRegister.findOne({
+            where : {request_id:requestId}
+        })
+        if(!requestFound){
+            throw new NotFoundException("Cannot found request");
+        }
+        //now, check the type
+        return requestFound;
     }
 
-    query(sql:string, params?: any[]){
-        //TODO(possible not necessary and will be removed)
+    async addRoleToUser(userId:number,role:string){
+        //first, find the user
+        const user = await this.userRepository.findOne({
+            where:{user_id : userId},
+            relations:{
+                roles:true,
+                permits:true
+            }
+        })
+        if(!user){
+            throw new NotFoundException("No user found")
+        }
+        const roleEnt = await this.roleRespository.findOne({
+            where: {role_name : role},
+            relations:{
+                permitsAllowed: true
+            }
+        })
+        if(!roleEnt){
+            throw new NotFoundException("No role found")
+        }
+        //update
+        user.roles.push(roleEnt)
+        for(const p of roleEnt.permitsAllowed){
+            user.permits.push(p)
+        }
+        //save updated object
+        await this.userRepository.save(user)
         return
     }
 
+    async deleteResource(rsrcId:number){
+        const resource = await this.resourceRepository.findOne({
+            where: {rsrc_id : rsrcId}
+        })
+        if(!resource){
+            throw new NotFoundException("No resource found for deletion")
+        }
+        await this.resourceRepository.remove(resource)
+    }
+
+    async uploadResource(rsrcId:number){
+        const resource = await this.resourceRepository.findOne({
+            where: {rsrc_id: rsrcId},
+            relations:{
+                policy:true
+            }
+        })
+        if(!resource){
+            throw new NotFoundException("No resource found for upload")
+        }
+        resource.policy.canBeIndexed = true;
+        await this.resourceRepository.save(resource);
+    }
+
+    async denyRequest(reqId:number){
+        const request = await this.baseRequestRegister.findOne({
+            where:{request_id : reqId}
+        })
+        if(!request){
+            throw new NotFoundException("Request not found");
+        }
+        request.approved = 'DENIED'
+        this.baseRequestRegister.save(request)
+        return
+    }
+
+    private convertRawResultToDto(raw:{id:number,name:string,author_name:string}[]):ResultDto[]{
+        return Object.values(
+            raw.reduce((acc:Record<number,ResultDto> , row) => {
+                const id = row.id;
+                if(!acc[id]){
+                    acc[id] = {
+                        rsrc_id : id,
+                        name : row.name,
+                        authors : []
+                    };
+                }
+
+                if(row.author_name){
+                    acc[id].authors.push(row.author_name);
+                }
+                return acc;
+            },{}
+            )
+        );
+    }
+
+    private async convertAndSafeRawAuthors(authorsList:string[]){
+        return await Promise.all( authorsList.map(async (author)=>{
+            const authorEntityFound = await this.authorRepository.findOne({
+                where : {author_name: author}
+            })
+            if(!authorEntityFound){
+                const authorEntitySaved = await this.authorRepository.save({
+                    author_name: author
+                })
+                return authorEntitySaved;
+            }
+            return authorEntityFound;
+        })
+        )
+    }
 }
