@@ -16,10 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface UserData {
+export interface UserData {
   id: number;
   codigo: string;
   email: string;
+  nombre: string;
+  info: string;
   permisos: {
     acceso: boolean;
     descarga: boolean;

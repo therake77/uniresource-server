@@ -24,7 +24,7 @@ import UserDeleteConfirmView from "@/pages/users_admin/UserDeleteConfirmView";
 import UserModifyView from "@/pages/users_admin/UserModifyView";
 
 // Tipo de datos de usuario
-interface UserData {
+export interface UserData {
   id: number;
   codigo: string;
   email: string;
