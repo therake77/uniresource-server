@@ -1,10 +1,9 @@
 import { useState } from "react";
-import UserSidebar from "@/pages/user/UserSidebar";
 import UserHeader from "@/pages/user/UserHeader";
 import ResourcesSection from "@/pages/user/ResourcesSection";
 
 const UserDashboard = () => {
-  const [activeSection, setActiveSection] = useState("recursos");
+  const [activeSection] = useState("recursos");
 
   const sectionTitles: Record<string, string> = {
     recursos: "Ver Recursos",
@@ -27,17 +26,10 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-muted/30">
-      <UserSidebar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-      />
+    <div className="min-h-screen flex flex-col w-full bg-muted/30">
+      <UserHeader sectionTitle={sectionTitles[activeSection]} />
 
-      <div className="flex-1 flex flex-col">
-        <UserHeader sectionTitle={sectionTitles[activeSection]} />
-
-        <main className="flex-1 p-6">{renderContent()}</main>
-      </div>
+      <main className="flex-1 p-6">{renderContent()}</main>
     </div>
   );
 };

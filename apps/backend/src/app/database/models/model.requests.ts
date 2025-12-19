@@ -13,6 +13,9 @@ export class RequestEntity{
     @PrimaryGeneratedColumn()
     request_id:number;
 
+    @Column()
+    request_type:string;
+
     @Column({default:'PENDIENTE'})
     approved:string
 }
@@ -23,9 +26,6 @@ export class ResourceRequestEntity extends RequestEntity{
     @ManyToOne(()=>UserEntity,(user)=>(user.requestsMade))
     @JoinColumn({name : "requestor_id"})
     requestor:UserEntity;
-    
-    @Column()
-    request_type:string;
 
     @ManyToOne(()=>ResourceEntity,(rsrEnt)=>(rsrEnt.requestsAsAffected),{nullable: true})
     @JoinColumn({name: 'obj_affected_id'})
@@ -39,9 +39,6 @@ export class ResourceRequestEntity extends RequestEntity{
 
 @ChildEntity('user_request')
 export class UserRequestEntity extends RequestEntity{
-
-    @Column()
-    request_type:string;
 
     @ManyToOne(()=>UserEntity,(user)=>(user.collaboratorRequests))
     @JoinColumn({name:'requestor_id'})

@@ -40,12 +40,12 @@ export class AdminService{
             throw new UnauthorizedException("That request was denied");
         }
         if(request instanceof UserRequestEntity){
-            this.databaseService.addRoleToUser(request.requestor.user_id,Role.COLLAB)
+            await this.databaseService.addRoleToUser(request.requestor.user_id,Role.COLLAB);
         }else if(request instanceof ResourceRequestEntity){
             if(request.request_type === RequestObject.uploadRequest){
                 this.databaseService.uploadResource(request.object_affecting!.rsrc_id)
             }else if(request.request_type === RequestObject.updateRequest){
-                throw new BadRequestException("Not implemented")
+                this.databaseService.updateResource(request.object_affecting!.rsrc_id,request.object_affected!.rsrc_id);
             }else if(request.request_type === RequestObject.deleteRequest){
                 this.databaseService.deleteResource(request.object_affected!.rsrc_id)
             }else{
@@ -54,6 +54,7 @@ export class AdminService{
         }else{
             throw new InternalServerErrorException("Error getting the result: Request Object is a base class and cannot be managed")
         }
+        this.databaseService.markRequestAsApproved(request.request_id);
     }
 
     async denyRequest(token:Token, requestId:number){

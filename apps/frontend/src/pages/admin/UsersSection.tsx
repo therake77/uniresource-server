@@ -18,10 +18,10 @@ import { Button } from "@/components/ui/button";
 
 // Componentes de vistas de usuario
 // Se usan para mostrar diferentes pantallas según la acción del usuario
-import UserDetailView from "@/pages/users_admin/UserDetailView";
-import UserDeleteView from "@/pages/users_admin/UserDeleteView";
-import UserDeleteConfirmView from "@/pages/users_admin/UserDeleteConfirmView";
-import UserModifyView from "@/pages/users_admin/UserModifyView";
+import UserDetailView from "@/pages/admin/users_admin/UserDetailView";
+import UserDeleteView from "@/pages/admin/users_admin/UserDeleteView";
+import UserDeleteConfirmView from "@/pages/admin/users_admin/UserDeleteConfirmView";
+import UserModifyView from "@/pages/admin/users_admin/UserModifyView";
 
 // Tipo de datos de usuario
 export interface UserData {

@@ -43,6 +43,6 @@ Docker production mode (aún no está del todo probado):
 (Todos estos requieren enviar el token proporcionado en autenticación, habiéndose autenticado como rol **ADMIN**)
 (Por el momento solo están los relacionados a la aprobación de solicitudes, los cuales son los más importantes)
 - `localhost:3000/api/admin/requests`: Obtiene todas las solicitudes existentes en la base de datos
-- `localhost:3000/api/approve/:id`: Aprueba la solicitud con id: id
-- `localhost:3000/api/deny/:id`: Deniega la solicitud con id: id
+- `localhost:3000/api/admin/approve/:id`: Aprueba la solicitud con id: id
+- `localhost:3000/api/admin/deny/:id`: Deniega la solicitud con id: id
 
