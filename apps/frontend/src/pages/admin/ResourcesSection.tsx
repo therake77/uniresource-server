@@ -2,8 +2,10 @@
  * ResourcesSection Component
  * --------------------------
  * Sección principal de "Ver Recursos" que incluye:
- * - Filtros de búsqueda (SearchFilters)
- * - Lista de recursos (ResourceCard)
+ * - Lista de recursos (vista por defecto)
+ * - Vista de actualización de recurso
+ * - Vista de eliminación de recurso
+ * - Vista de confirmación de eliminación
  * 
  * Ubicación: src/components/admin/ResourcesSection.tsx
  * Se usa en: src/pages/AdminDashboard.tsx
@@ -11,11 +13,30 @@
 
 import { useState } from "react";
 import SearchFilters, { SearchFiltersData } from "./SearchFilters";
-import ResourceCard from "./ResourcesCard";
-import { useToast } from "@/hooks/use-toast";  
+import ResourceCard from "@/pages/admin/ResourcesCard";
+import ResourceUpdateView from "@/pages/admin/resource_admin/ResourceUptadeView";
+import ResourceDeleteView from "@/pages/admin/resource_admin/ResourceDeleteView";
+import ResourceDeleteConfirmView from "@/pages/admin/resource_admin/ResourceDeleteConfirmView";
+import { useToast } from "@/hooks/use-toast";
+
+// Tipo para los datos del recurso
+interface ResourceData {
+  id: string;
+  titulo: string;
+  informacionExtra: string;
+  autores?: string;
+  fechaPublicacion?: string;
+  escuela?: string;
+  tipo?: string;
+  ciclo?: string;
+  descripcion?: string;
+}
+
+// Tipo para el estado de la vista
+type ViewState = "list" | "update" | "delete" | "deleteConfirm";
 
 // Datos de ejemplo para los recursos
-const mockResources = [
+const mockResources: ResourceData[] = [
   { id: "1", titulo: "(Título)", informacionExtra: "Información extra" },
   { id: "2", titulo: "(Título)", informacionExtra: "Información extra" },
   { id: "3", titulo: "(Título)", informacionExtra: "Información extra" },
@@ -24,7 +45,10 @@ const mockResources = [
 ];
 
 const ResourcesSection = () => {
-  const [resources] = useState(mockResources);
+  const [resources] = useState<ResourceData[]>(mockResources);
+  const [viewState, setViewState] = useState<ViewState>("list");
+  const [selectedResource, setSelectedResource] = useState<ResourceData | null>(null);
+  const [deleteMotivo, setDeleteMotivo] = useState("");
   const { toast } = useToast();
 
   const handleSearch = (filters: SearchFiltersData) => {
@@ -36,22 +60,88 @@ const ResourcesSection = () => {
   };
 
   const handleActualizar = (id: string) => {
-    console.log("Actualizar recurso:", id);
-    toast({
-      title: "Actualizar recurso",
-      description: `Editando recurso ID: ${id}`,
-    });
+    const resource = resources.find(r => r.id === id);
+    if (resource) {
+      setSelectedResource(resource);
+      setViewState("update");
+    }
   };
 
   const handleEliminar = (id: string) => {
-    console.log("Eliminar recurso:", id);
-    toast({
-      title: "Eliminar recurso",
-      description: `Eliminando recurso ID: ${id}`,
-      variant: "destructive",
-    });
+    const resource = resources.find(r => r.id === id);
+    if (resource) {
+      setSelectedResource(resource);
+      setViewState("delete");
+    }
   };
 
+  const handleUpdateSubmit = (data: ResourceData) => {
+    console.log("Actualizando recurso:", data);
+    toast({
+      title: "Recurso actualizado",
+      description: `El recurso "${data.titulo}" ha sido actualizado.`,
+    });
+    setViewState("list");
+    setSelectedResource(null);
+  };
+
+  const handleDeleteSubmit = (motivo: string) => {
+    setDeleteMotivo(motivo);
+    setViewState("deleteConfirm");
+  };
+
+  const handleDeleteConfirm = (email: string, password: string) => {
+    console.log("Confirmando eliminación:", { email, motivo: deleteMotivo });
+    toast({
+      title: "Recurso eliminado",
+      description: `El recurso ha sido eliminado exitosamente.`,
+      variant: "destructive",
+    });
+    setViewState("list");
+    setSelectedResource(null);
+    setDeleteMotivo("");
+  };
+
+  const handleBack = () => {
+    if (viewState === "deleteConfirm") {
+      setViewState("delete");
+    } else {
+      setViewState("list");
+      setSelectedResource(null);
+    }
+  };
+
+  // Renderizar según el estado de la vista
+  if (viewState === "update" && selectedResource) {
+    return (
+      <ResourceUpdateView
+        resource={selectedResource}
+        onBack={handleBack}
+        onUpdate={handleUpdateSubmit}
+      />
+    );
+  }
+
+  if (viewState === "delete" && selectedResource) {
+    return (
+      <ResourceDeleteView
+        resource={selectedResource}
+        onBack={handleBack}
+        onDelete={handleDeleteSubmit}
+      />
+    );
+  }
+
+  if (viewState === "deleteConfirm") {
+    return (
+      <ResourceDeleteConfirmView
+        onBack={handleBack}
+        onConfirm={handleDeleteConfirm}
+      />
+    );
+  }
+
+  // Vista por defecto: lista de recursos
   return (
     <div className="space-y-6">
       {/* Componente de filtros de búsqueda */}

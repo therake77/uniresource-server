@@ -17,12 +17,12 @@ export class LocalStrategy extends PassportStrategy(Strategy){
         });
     }
 
-    override validate(req: Request, email: string, password: string) {
+    override async validate(req: Request, email: string, password: string) {
         const loginDto = req.body as LoginDto;
         console.log(loginDto);
-        const token = this.authService.createToken(loginDto);
+        const token = await this.authService.createToken(loginDto);
         if(!token){
-            throw UnauthorizedException;
+            throw new UnauthorizedException();
         }
         return token;
     }
