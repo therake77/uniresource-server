@@ -1,18 +1,7 @@
-/**
- * AdminSidebar Component
- * ----------------------
- * Barra lateral del panel de administración con:
- * - Botones de navegación (Ver Recursos, Ver Usuarios, Revisar solicitudes, Mantenimiento)
- * - Información del usuario administrador en la parte inferior
- * - Botón de salir
- * 
- * Ubicación: src/components/admin/AdminSidebar.tsx
- * Se usa en: src/pages/AdminDashboard.tsx
- */
-
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -21,6 +10,19 @@ interface AdminSidebarProps {
 
 const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => {
   const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        setUserId(decoded.userId || null);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+  }, []);
 
   // Opciones del menú lateral
   const menuItems = [
@@ -65,7 +67,7 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
           {/* Datos del administrador */}
           <div className="flex-1">
             <p className="font-medium text-foreground text-sm">Administrador</p>
-            <p className="text-xs text-muted-foreground">ID: 22dc1ea4326ad85e2a6</p>
+            <p className="text-xs text-muted-foreground">ID: {userId || "..."}</p>
             
             {/* Botón Salir */}
             <Button

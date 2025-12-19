@@ -1,22 +1,35 @@
 import { Type } from "class-transformer";
-import { IsDate, IsEmpty, IsOptional } from "class-validator";
+import { IsArray, IsDate, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class SearchResourceDto{
+
+    @IsString()
+    @IsOptional()
     name?:string;
     
+    @IsString()
+    @IsOptional()
     type?:string;
 
-    @IsDate({})
+    @IsDate()
     @IsOptional()
     @Type(()=>Date)
     dateOfPublish?:Date;
 
+    @IsString()
+    @IsOptional()
     school?:string;
 
+    @IsNumber()
+    @IsOptional()
     semester?:number;
 
+    @IsArray()
+    @IsOptional()
     authors?:string[];
 
+    @IsString()
+    @IsOptional()
     course?:string;
 
 }

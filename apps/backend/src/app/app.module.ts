@@ -10,8 +10,7 @@ import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     AuthModule,ConfigModule.forRoot({
-      isGlobal:true,
-      envFilePath:'.env',
+      isGlobal:true
     }),
     UserModule,
     CollaboratorModule,

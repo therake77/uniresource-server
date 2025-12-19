@@ -6,6 +6,7 @@ import { AccessService } from "../access/access.service";
 import * as fs from 'fs';
 import type { Request, Response } from "express";
 import { RequestService } from "../request/request.service";
+import { join } from "path";
 
 @Controller('user')
 export class UserController{
@@ -19,18 +20,22 @@ export class UserController{
     @UseGuards(JwtGuard)
     @UsePipes(ValidationPipe)
     async getResourceImages(@Req() req : Request & { user: Token },@Res() res:Response ,@Param('id') id: number){
-        const path = await this.accessService.getResourcesAsImages(id,req.user);
+        const partialPath = await this.accessService.getResourcesAsImages(id,req.user);
+        const path = join(process.cwd(),partialPath)
+        console.log(path)
         //first step: compute the range
         const stat = fs.statSync(path);
         const range = req.headers['range']!;
+        res.setHeader('Content-Type', 'application/pdf');
         //check if range is set. if not, send all the file, i don't care
+        console.log(path);
         if(!range){
             res.setHeader('Content-Length',stat.size);
             fs.createReadStream(path).pipe(res);
             return;
         }
         //if is set, then get the range as numbers, set the headers and start the streaming
-        const [startString,endString] = range.replace('/bytes=/','').split('-');
+        const [startString,endString] = range.replace('bytes=','').split('-');
         const start = parseInt(startString,10);
         const end = endString ? parseInt(endString,10) : stat.size-1;
         res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`);
@@ -51,6 +56,7 @@ export class UserController{
 
     @Post('search')
     @UseGuards(JwtGuard)
+    @UsePipes(ValidationPipe)
     async search(@Body() searchDto:SearchResourceDto){
         console.log(searchDto);
         const result =  await this.accessService.searchResource(searchDto);

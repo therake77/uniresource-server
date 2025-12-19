@@ -8,7 +8,7 @@ import { AccessService } from "../access/access.service";
 import { RequestService } from "../request/request.service";
 import type { Request } from "express";
 import { Role } from "../models/common/roles";
-import { join } from "path";
+import { extname, join } from "path";
 
 @Controller('collab')
 export class CollaboratorController{
@@ -36,7 +36,7 @@ export class CollaboratorController{
             filename: (req:Request,file,cb) => {
                 const timestamp = Date.now();
                 (req as any)['uploadDate'] = timestamp;
-                const dateString = timestamp + '-' + Math.round(Math.random() * 1e9);
+                const dateString = timestamp + '-' + Math.round(Math.random() * 1e9)+ extname(file.originalname);
                 cb(null,dateString);
             }
         })

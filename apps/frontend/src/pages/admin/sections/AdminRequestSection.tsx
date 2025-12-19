@@ -146,12 +146,16 @@ const AdminRequestSection = () => {
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <Button variant="outline" size="sm" onClick={() => handleAccept(request.request_id)}>
-                Accept
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => handleDeny(request.request_id)}>
-                Deny
-              </Button>
+              {request.status !== "APROBADO" && request.status !== "DENEGADO" && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => handleAccept(request.request_id)}>
+                    Accept
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeny(request.request_id)}>
+                    Deny
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         ))}

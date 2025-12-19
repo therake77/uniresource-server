@@ -17,11 +17,11 @@ export class ResourceEntity{
     @OneToOne(
         ()=>(ResourceMetadataEntity),
         (metadata)=>(metadata.rsrc_ent),
-        {cascade:true}
+        {cascade:true, onDelete: "CASCADE"}
     )
     resourceMetadata:ResourceMetadataEntity;
 
-    @OneToOne(()=>(ResourcePolicy),(policy)=>(policy.rsrc_ent),{cascade:true})
+    @OneToOne(()=>(ResourcePolicy),(policy)=>(policy.rsrc_ent),{cascade:true, onDelete: "CASCADE"})
     policy:ResourcePolicy;
 
     @ManyToMany(()=>(AuthorEntity),(author)=>(author.resources))
@@ -29,7 +29,7 @@ export class ResourceEntity{
     authors:AuthorEntity[];
 
     @ManyToOne(()=>(UserEntity),(user)=>(user.responsible_of))
-    @JoinColumn({name: "policy_id"})
+    @JoinColumn({name: "responsible_id"})
     responsible:UserEntity;
 
     @OneToMany(()=>AccessRegisterEntity,(activity)=>(activity.resourceAccessed))

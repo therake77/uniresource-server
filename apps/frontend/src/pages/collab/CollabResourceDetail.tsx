@@ -15,7 +15,7 @@ interface ResourceReference {
   authors: string[];
 }
 
-const ResourceDetail = () => {
+const CollabResourceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [resource, setResource] = useState<ResourceReference | null>(null);
@@ -24,7 +24,7 @@ const ResourceDetail = () => {
   useEffect(() => {
     const fetchResource = async () => {
       if (!id) {
-        navigate("/user");
+        navigate("/collab");
         return;
       }
       try {
@@ -40,7 +40,7 @@ const ResourceDetail = () => {
             navigate("/");
           } else if (res.status === 404) {
             alert("Recurso no encontrado.");
-            navigate("/user");
+            navigate("/collab");
           }
           return;
         }
@@ -54,13 +54,12 @@ const ResourceDetail = () => {
       } catch (error) {
         console.error("Error fetching resource:", error);
         alert("Error al cargar el recurso");
-        navigate("/user");
+        navigate("/collab");
       }
     };
 
     fetchResource();
   }, [id, navigate]);
-  
 
   const handleDownload = async () => {
     if (!id || !resource) return;
@@ -76,7 +75,7 @@ const ResourceDetail = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${resource.name}.pdf`; // Assuming it's a PDF
+        a.download = `${resource.name}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -114,6 +113,26 @@ const ResourceDetail = () => {
     } catch (error) {
       console.error("Error loading PDF:", error);
       alert("Error loading PDF");
+    }
+  };
+
+  const handleRequestDelete = async () => {
+    const res = await fetch(`http://localhost:3000/api/collab/delete/${id}`, {
+        method: 'DELETE',
+        headers: {
+            authorization: `Bearer ${localStorage.getItem('access_token')}`
+        }
+    });
+    if(res.ok){
+        alert("Delete request submitted successfully.");
+        navigate("/collab");
+    } else {
+        if(res.status === 401){
+            navigate("/");
+            return;
+        }
+        alert(`Error submitting delete request: ${(await res.json()).message}`);
+        
     }
   };
 
@@ -184,6 +203,9 @@ const ResourceDetail = () => {
             <Button onClick={handleVisualize} variant="outline">
               Visualize
             </Button>
+            <Button onClick={handleRequestDelete} variant="destructive">
+              Request Delete
+            </Button>
           </div>
         </div>
 
@@ -208,4 +230,4 @@ const ResourceDetail = () => {
   );
 };
 
-export default ResourceDetail;
+export default CollabResourceDetail;

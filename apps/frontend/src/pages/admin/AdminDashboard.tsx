@@ -22,7 +22,6 @@
 import { useState } from "react";
 import AdminSidebar from "@/pages/admin/AdminSidebar";
 import AdminHeader from "@/pages/admin/AdminHeader";
-import ResourcesSection from "@/pages/admin/ResourcesSection";
 import AdminRequestSection from "@/pages/admin/sections/AdminRequestSection";
 
 const AdminDashboard = () => {
@@ -40,24 +39,10 @@ const AdminDashboard = () => {
   // Renderiza el contenido según la sección activa
   const renderContent = () => {
     switch (activeSection) {
-      case "recursos":
-        return <ResourcesSection />;
-      case "usuarios":
-        return (
-          <div className="text-center text-muted-foreground py-12">
-            Sección de usuarios en desarrollo...
-          </div>
-        );
       case "solicitudes":
         return <AdminRequestSection />;
-      case "mantenimiento":
-        return (
-          <div className="text-center text-muted-foreground py-12">
-            Sección de mantenimiento en desarrollo...
-          </div>
-        );
       default:
-        return <ResourcesSection />;
+        return <AdminRequestSection />;
     }
   };
 

@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build:
@@ -9,48 +11,67 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      DATABASE_HOST: db
-      DATABASE_PORT: 5432
-      DATABASE_NAME: repositorio
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: repositorio
+      DB_USR: postgres
+      DB_PASSWRD: postgres
       FILE_STORAGE_PATH: /app/storage
+      JWT_SECRET_KEY: your-secret-key
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
-      - ./storage:/app/storage 
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./storage:/app/storage
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
   frontend:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
     container_name: app-frontend
+    restart: unless-stopped
     ports:
       - "80:80"
-    environment:
-      REACT_APP_API_URL: http://localhost:3000
     depends_on:
       - backend
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: app-database
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: repositorio
+      POSTGRES_INITDB_ARGS: "-c shared_buffers=256MB -c max_connections=200"
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

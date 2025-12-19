@@ -1,6 +1,7 @@
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface CollabSidebarProps {
   activeSection: string;
@@ -9,6 +10,19 @@ interface CollabSidebarProps {
 
 const CollabSidebar = ({ activeSection, onSectionChange }: CollabSidebarProps) => {
   const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        setUserId(decoded.userId || null);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+  }, []);
 
   const menuItems = [
     { id: "recursos", label: "Mis recursos" },
@@ -45,7 +59,7 @@ const CollabSidebar = ({ activeSection, onSectionChange }: CollabSidebarProps) =
 
           <div className="flex-1">
             <p className="font-medium text-foreground text-sm">Colaborador</p>
-            <p className="text-xs text-muted-foreground">ID: collab-demo</p>
+            <p className="text-xs text-muted-foreground">ID: {userId || "..."}</p>
 
             <Button variant="outline" size="sm" className="mt-2 w-full h-7 text-xs" onClick={handleLogout}>
               Salir

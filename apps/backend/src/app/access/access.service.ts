@@ -37,6 +37,7 @@ export class AccessService{
         }
         //now, get the resource object
         const rsrcObj = await this.databaseService.getResourceObject(rsrc_id);
+        console.log(rsrcObj);
         if(!rsrcObj){
             throw new NotFoundException("Resource don't exist")
         }

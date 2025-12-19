@@ -28,14 +28,13 @@ const getMyResources = async () => {
 
 const MyResourcesSection = () => {
   const [resources, setResources] = useState<ResourceDto[]>([]);
+  const navigate = useNavigate();
   useEffect(()=>{
     const resourcesFound =  getMyResources();
     resourcesFound.then((resources) => setResources(resources));
   })
   const handleGetResource = (id: string) => {
-    console.log(`Get resource with id: ${id}`);
-    // Aquí puedes agregar la lógica para manejar la obtención del recurso
-
+    navigate(`/collab/resource/${id}`);
   };
 
   if(resources.length==0){

@@ -12,8 +12,8 @@ export class ResourcePolicy{
     @Column()
     canBeIndexed:boolean;
 
-    @OneToOne(()=>(ResourceEntity),(rsrEnt)=>(rsrEnt.policy))
-    @JoinColumn({name:"rsrc_id"})
+    @OneToOne(()=>(ResourceEntity),(rsrEnt)=>(rsrEnt.policy),{onDelete:'CASCADE'})
+    @JoinColumn({name: "rsrc_id"})
     rsrc_ent?:ResourceEntity;
 
 }

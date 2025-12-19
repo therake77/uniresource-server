@@ -27,3 +27,6 @@ INSERT INTO permit_role_role VALUES
 (5,3),
 (6,2)
 ON CONFLICT ("permitPermitId","roleRoleId") DO NOTHING;
+
+INSERT INTO user_entity VALUES 
+(DEFAULT, 'admin', 'admin@admin.com','' )

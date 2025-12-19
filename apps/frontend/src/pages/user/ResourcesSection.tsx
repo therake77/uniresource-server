@@ -21,26 +21,29 @@ const ResourcesSection = () => {
   const navigate = useNavigate();
 
   const handleSearch = async (filters: SearchFiltersData) => {
+    console.log('Filters received:', filters);
+
     const res = await fetch("http://localhost:3000/api/user/search",{
       method: 'POST',
       headers: {
         "Authorization" : `Bearer ${localStorage.getItem('access_token')}`,
-        "Content-type" : 'application/json'
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        name: filters.name,
-        type: filters.type,
-        dateOfPublish: filters.dateOfPublish,
-        school: filters.school,
-        semester: filters.semester,
-        authors: filters.authors,
-        course: filters.course
+        name: filters.name || undefined,
+        type: filters.type || undefined,
+        dateOfPublish: filters.dateOfPublish ? new Date(filters.dateOfPublish) : undefined, 
+        school: filters.school || undefined,
+        semester: filters.semester || undefined,
+        authors: filters.authors || undefined,
+        course: filters.course || undefined,
       })
     });
 
     if(!res.ok){
       if(res.status == 404){
         alert("No se encontraron recursos con los filtros proporcionados.");
+        setResources([]);
         return;
       }
       if(res.status == 401){
@@ -68,7 +71,7 @@ const ResourcesSection = () => {
             key={resource.rsrc_id}
             id={resource.rsrc_id.toString()}
             titulo={resource.name}
-            informacionExtra={`Tipo: ${resource.type} | Autores: ${resource.authors.join(", ")}`}
+            informacionExtra={`Autores: ${resource.authors.join(", ")}`}
             onSee={handleSee}
           />
         ))}

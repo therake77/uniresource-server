@@ -106,7 +106,12 @@ export class DatabaseService{
     async getResourceObject(id:number){
         //Returns a promise of a ResourceObject, or null if it doesn't exists
         const rsrcEntFound = await this.resourceRepository.findOne({
-            where: {rsrc_id: id}
+            where: {rsrc_id: id},
+            relations : {
+                policy : true,
+                resourceMetadata : true,
+                responsible : true
+            }
         })
         if(!rsrcEntFound){
             return null;
@@ -121,6 +126,7 @@ export class DatabaseService{
             policies : rsc_policy,
             responsibleUserId: rsrcEntFound.responsible.user_id
         }
+        console.log(rsrcObj);
         return rsrcObj;
     }
 
@@ -305,7 +311,7 @@ export class DatabaseService{
         .leftJoinAndSelect('resource.policy','policy')
         .where('policy.canBeIndexed = TRUE')
         if(filters.authors){
-            qb.andWhere('author.author_name IN (...:author_names)',{author_names:filters.authors});
+            qb.andWhere('author.author_name IN (:...author_names)',{author_names:filters.authors});
             console.log("author field detected")
         }
         if(filters.course){
@@ -425,7 +431,8 @@ export class DatabaseService{
             relations:{
                 responsible_of:{
                     authors:true,
-                    resourceMetadata:true
+                    resourceMetadata:true,
+                    policy:true
                 }
             }
         })
@@ -434,7 +441,7 @@ export class DatabaseService{
         }
         
         const resources:ResourceEntity[] = userEnt.responsible_of;
-        
+        resources.filter((rsrc)=>(rsrc.policy.canBeIndexed === true))
         if(resources.length == 0){
             throw new NotFoundException("Collaborator doesn't have any resources associated with him");
         }

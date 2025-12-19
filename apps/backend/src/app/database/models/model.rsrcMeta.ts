@@ -33,7 +33,7 @@ export class ResourceMetadataEntity{
     @Column({type:'text'})
     description:string;
 
-    @OneToOne(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.resourceMetadata))
+    @OneToOne(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.resourceMetadata),{onDelete:'CASCADE'})
     @JoinColumn({ name: 'rsrc_id'})
     rsrc_ent?:ResourceEntity;
 
