@@ -49,10 +49,13 @@ export class UserController{
         stream.pipe(res);
     }
 
-    @Get('search')
+    @Post('search')
     @UseGuards(JwtGuard)
     async search(@Body() searchDto:SearchResourceDto){
-        return await this.accessService.searchResource(searchDto);
+        console.log(searchDto);
+        const result =  await this.accessService.searchResource(searchDto);
+        console.log(result);
+        return result;
     }
 
     @Post('request')

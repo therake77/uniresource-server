@@ -1,5 +1,6 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 interface ResourceReference {
   rsrc_id: number;
@@ -15,9 +16,50 @@ interface ResourceReference {
 }
 
 const ResourceDetail = () => {
-  const location = useLocation();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const resource: ResourceReference = location.state?.resource;
+  const [resource, setResource] = useState<ResourceReference | null>(null);
+
+  useEffect(() => {
+    const fetchResource = async () => {
+      if (!id) {
+        navigate("/user");
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:3000/api/user/rsrc_ref/${id}`, {
+          method: 'GET',
+          headers: {
+            authorization: `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            navigate("/");
+          } else if (res.status === 404) {
+            alert("Recurso no encontrado.");
+            navigate("/user");
+          }
+          return;
+        }
+
+        const data = await res.json();
+        setResource({
+          ...data,
+          publish_date: new Date(data.publish_date),
+          upload_date: new Date(data.upload_date)
+        });
+      } catch (error) {
+        console.error("Error fetching resource:", error);
+        alert("Error al cargar el recurso");
+        navigate("/user");
+      }
+    };
+
+    fetchResource();
+  }, [id, navigate]);
+  
 
   const handleDownload = async () => {
     // TODO: implement download

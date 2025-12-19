@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service";
 import { AuthService } from "../auth/auth.service";
 import { Token } from "../models/common/token";
 import { NewMetadata, NewResource, NewResourceDto } from "../models/common/newResourceDto";
-import { ColabPermits } from "../models/common/permits";
+import { ColabPermits, UserPermit } from "../models/common/permits";
 import { RequestDto, RequestObject } from "../models/common/requestDto";
 import { Role } from "../models/common/roles";
 
@@ -136,18 +136,22 @@ export class RequestService{
     }
 
     async requestCollaboration(token:Token){
-        //check if user exists, and if he has already a collaboration role
+        //check if user exists, and if he has already a collaboration role or he has already requested a collaboration
         const user = await this.databaseService.findUser(token.userId,token.role);
         const flagUser = await this.databaseService.findUser(token.userId,Role.COLLAB);
+        
         if(!user){
             throw new NotFoundException("User not found");
         }
-        
+        const possibleRequest = await this.databaseService.findRequest(RequestObject.collabRequest,user.id);
         if(flagUser){
-            throw new UnauthorizedException("User already has a collaborator role");
+            console.log(flagUser);
+            throw new BadRequestException("User already has a collaborator role");
         }
-
-        if(!((user.permits) instanceof ColabPermits)){
+        if(possibleRequest.length != 0){
+            throw new BadRequestException("User already has requested collaborator");
+        }
+        if(!((user.permits) instanceof UserPermit)){
             throw new UnauthorizedException("You are not a collaborator");
         }
         //create and save the request

@@ -23,6 +23,7 @@ import { useState } from "react";
 import AdminSidebar from "@/pages/admin/AdminSidebar";
 import AdminHeader from "@/pages/admin/AdminHeader";
 import ResourcesSection from "@/pages/admin/ResourcesSection";
+import AdminRequestSection from "@/pages/admin/sections/AdminRequestSection";
 
 const AdminDashboard = () => {
   // Estado para controlar la sección activa del sidebar
@@ -48,11 +49,7 @@ const AdminDashboard = () => {
           </div>
         );
       case "solicitudes":
-        return (
-          <div className="text-center text-muted-foreground py-12">
-            Sección de solicitudes en desarrollo...
-          </div>
-        );
+        return <AdminRequestSection />;
       case "mantenimiento":
         return (
           <div className="text-center text-muted-foreground py-12">

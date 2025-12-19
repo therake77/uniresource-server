@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { ResourceMetadataEntity } from "./model.rsrcMeta";
 import { ResourcePolicy } from "./model.policy";
 import { AuthorEntity } from "./model.author";
@@ -11,7 +11,7 @@ export class ResourceEntity{
     @PrimaryGeneratedColumn()
     rsrc_id:number;
     
-    @Column()
+    @Column({unique: true})
     path:string;
 
     @OneToOne(

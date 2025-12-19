@@ -8,6 +8,7 @@ import { AccessService } from "../access/access.service";
 import { RequestService } from "../request/request.service";
 import type { Request } from "express";
 import { Role } from "../models/common/roles";
+import { join } from "path";
 
 @Controller('collab')
 export class CollaboratorController{
@@ -36,7 +37,7 @@ export class CollaboratorController{
                 const timestamp = Date.now();
                 (req as any)['uploadDate'] = timestamp;
                 const dateString = timestamp + '-' + Math.round(Math.random() * 1e9);
-                cb(null,dateString + '-' + file.originalname);
+                cb(null,dateString);
             }
         })
     }))
@@ -50,8 +51,8 @@ export class CollaboratorController{
         }
         const uploadDate = new Date((req as any).uploadDate);
         const filename = file.filename;
-
-        return await this.requestService.requestUpload(uploadDate,filename,newResourceDto,req.user);
+        const path = join("storage/temp",filename)
+        return await this.requestService.requestUpload(uploadDate,path,newResourceDto,req.user);
     }
 
     @Put('update/:id')

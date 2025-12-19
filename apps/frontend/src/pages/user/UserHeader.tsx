@@ -17,8 +17,20 @@ const UserHeader = ({ sectionTitle }: UserHeaderProps) => {
   }, []);
 
   const handleRequestCollaborator = () => {
-    // TODO: implement request collaborator
-    alert("Request collaborator functionality to be implemented");
+    const makeRequest = async () => {
+      const res = await fetch("http://localhost:3000/api/user/request", {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      if (res.ok) {
+        alert("Request sent successfully");
+      } else {
+        alert(`Failed to send request: ${(await res.json()).message}`);
+      }
+    };
+    makeRequest();
   };
 
   const handleLogout = () => {

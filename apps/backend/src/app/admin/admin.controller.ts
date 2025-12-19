@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Post, Req } from "@nestjs/common";
+import { Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { Token } from "../models/common/token";
 import { AdminService } from "./admin.service";
+import { JwtGuard } from "../auth/guards/jwt.guard";
 
 @Controller('admin')
 export class AdminController{
@@ -10,16 +11,19 @@ export class AdminController{
     ){}
 
     @Get('requests')
+    @UseGuards(JwtGuard)
     async getRequests(@Req() req:{user:Token}){
         return await this.adminService.getRequests(req.user)
     }
 
     @Post('approve/:id')
+    @UseGuards(JwtGuard)
     async approveRequest(@Req() req:{user: Token}, @Param('id') requestId:number){
         return await this.adminService.approveRequest(req.user,requestId);
     }
-
+    
     @Post('deny/:id')
+    @UseGuards(JwtGuard)
     async denyRequest(@Req() req:{user: Token}, @Param('id') requestId:number){
         return await this.adminService.denyRequest(req.user,requestId);
     }

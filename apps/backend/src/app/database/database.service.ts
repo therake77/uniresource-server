@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, NotImplementedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { In, Not, Repository } from "typeorm";
 import { UserEntity } from "./models/model.user";
 import { User } from "../models/common/user";
 import { CreateUserDto } from "../models/dto/createUser.dto";
@@ -19,9 +19,11 @@ import { NewResource } from "../models/common/newResourceDto";
 import { AuthorEntity } from "./models/model.author";
 import { AccessRegisterEntity } from "./models/accessRegister";
 import { RequestDto, RequestObject } from "../models/common/requestDto";
-
+import * as fs from "fs";
+import { copyFile, unlink } from 'fs/promises';
 import { Role } from "../models/common/roles";
 import { RequestEntity, ResourceRequestEntity, UserRequestEntity } from "./models/model.requests";
+import { basename, join } from "path";
 
 @Injectable()
 export class DatabaseService{
@@ -256,7 +258,7 @@ export class DatabaseService{
             //first save the new resource information in the database
             const toBeSaved = request.object_affecting as NewResource
             const new_rsrc = await this.saveNewResourceIntoDatabase(user,toBeSaved);
-            const requestCreated = await this.userRequestRegister.save({
+            const requestCreated = await this.rsrcRequestRegister.save({
                 requestor:user,
                 request_type: request.requestType,
                 object_affecting : new_rsrc
@@ -484,8 +486,18 @@ export class DatabaseService{
     }
 
     async getRequests(){
-        const userRequests:UserRequestEntity[] = await this.userRequestRegister.find({})
-        const rsrcRequests:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({})
+        const userRequests:UserRequestEntity[] = await this.userRequestRegister.find({
+            relations:{
+                requestor:true
+            }
+        })
+        const rsrcRequests:ResourceRequestEntity[] = await this.rsrcRequestRegister.find({
+            relations:{
+                requestor:true,
+                object_affected:true,
+                object_affecting:true
+            }
+        })
         const toReturn:RequestDto[] = [];
         for(const r of userRequests){
             toReturn.push(this.parseUserRequestToRequestDto(r))
@@ -498,16 +510,52 @@ export class DatabaseService{
         }
         return toReturn;
     }
+    
+    async markRequestAsApproved(requestId:number){
+        const rsrcBaseFound = await this.baseRequestRegister.findOne({
+            where: {request_id : requestId}
+        })
+        if(!rsrcBaseFound){
+            throw new InternalServerErrorException("Base request cannot be found");
+        }
+        rsrcBaseFound.approved = "APROBADO";
+        await this.baseRequestRegister.save(rsrcBaseFound);
+        return
+    }
 
     async getRequest(requestId:number){
         const requestFound = await this.baseRequestRegister.findOne({
-            where : {request_id:requestId}
+            where : {request_id:requestId},
         })
         if(!requestFound){
-            throw new NotFoundException("Cannot found request");
+            throw new NotFoundException("(GetRequest) Cannot found request");
         }
-        //now, check the type
-        return requestFound;
+        else if(requestFound.request_type == RequestObject.collabRequest){
+            const trueRequest = await this.userRequestRegister.findOne({
+                where: {request_id : requestId},
+                relations:{
+                    requestor : true
+                }
+            });
+            if(!trueRequest){
+                throw new InternalServerErrorException("Cannot found user request");
+            }
+            return trueRequest;
+        }
+        else{
+            const trueRequest = await this.rsrcRequestRegister.findOne({
+                where : {request_id : requestId},
+                relations : {
+                    requestor : true,
+                    object_affected : true,
+                    object_affecting : true
+                }
+            })
+            if(!trueRequest){
+                throw new InternalServerErrorException("Cannot found rsrc request");
+            }
+            return trueRequest;
+        }
     }
 
     async addRoleToUser(userId:number,role:string){
@@ -550,19 +598,49 @@ export class DatabaseService{
         }
         await this.resourceRepository.remove(resource)
     }
-
+    async moveFile( source: string, destination: string) {
+        try {
+            await fs.promises.rename(source, destination);
+        } catch (err: any) {
+            if (err.code === 'EXDEV') {
+                await copyFile(source, destination);
+                await unlink(source);
+            } else {
+                throw err;
+            }
+        }
+    }
     async uploadResource(rsrcId:number){
         const resource = await this.resourceRepository.findOne({
             where: {rsrc_id: rsrcId},
             relations:{
-                policy:true
+                policy:true,
+                resourceMetadata:true
             }
         })
         if(!resource){
             throw new NotFoundException("No resource found for upload")
         }
         resource.policy.canBeIndexed = true;
-        await this.resourceRepository.save(resource);
+        //changing path logic:
+        const currDate = Date.now()
+        resource.resourceMetadata.upload_date = new Date(currDate);
+        const currPath = join(process.cwd(),resource.path);
+        const newPath = join("storage/permanent",basename(resource.path));
+        //storage/permanent/(file-name)
+        await this.moveFile(currPath,newPath);
+        resource.path = newPath;
+        try{
+            const saved = await this.resourceRepository.save(resource);
+            return saved.rsrc_id;
+        }catch(err){
+            this.moveFile(newPath,currPath);
+            throw new InternalServerErrorException("Cannot save file");
+        }
+    }
+
+    async updateResource(source:number,affected:number){
+        throw new NotImplementedException("Still not implemented");
     }
 
     async denyRequest(reqId:number){
@@ -572,9 +650,33 @@ export class DatabaseService{
         if(!request){
             throw new NotFoundException("Request not found");
         }
-        request.approved = 'DENIED'
+        request.approved = 'DENEGADO'
         this.baseRequestRegister.save(request)
         return
+    }
+
+    async findRequest(requestType:string,requestorId:number){
+        if(requestType == RequestObject.collabRequest){
+            const found = await this.userRequestRegister.find({
+                where : {
+                    requestor:{
+                        user_id : requestorId
+                    },
+                    approved: Not("DENEGADO")
+                },
+            })
+            return found
+        }
+        else{
+            return await this.rsrcRequestRegister.find({
+                where : {
+                    requestor:{
+                        user_id : requestorId
+                    },
+                    approved: Not("DENEGADO")
+                },
+            })
+        }
     }
 
     private convertRawResultToDto(raw:{id:number,name:string,author_name:string}[]):ResultDto[]{

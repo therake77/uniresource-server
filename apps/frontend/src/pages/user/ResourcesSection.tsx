@@ -1,7 +1,6 @@
 import { useState } from "react";
 import SearchFilters, { SearchFiltersData } from "./SearchFilters";
 import ResourceCard from "./ResourcesCard";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 interface ResourceReference {
@@ -17,57 +16,28 @@ interface ResourceReference {
   authors: string[];
 }
 
-const mockResources: ResourceReference[] = [
-  {
-    rsrc_id: 1,
-    name: "Recurso de Matemáticas",
-    type: "PDF",
-    publish_date: new Date("2023-01-01"),
-    upload_date: new Date("2023-01-15"),
-    course: "Álgebra",
-    semester: 1,
-    school: "Facultad de Ciencias",
-    description: "Material de estudio para álgebra básica.",
-    authors: ["Autor 1", "Autor 2"],
-  },
-  {
-    rsrc_id: 2,
-    name: "Guía de Física",
-    type: "Documento",
-    publish_date: new Date("2023-02-01"),
-    upload_date: new Date("2023-02-10"),
-    course: "Física General",
-    semester: 2,
-    school: "Facultad de Ciencias",
-    description: "Guía completa para el curso de física.",
-    authors: ["Profesor X"],
-  },
-  {
-    rsrc_id: 3,
-    name: "Ejercicios de Programación",
-    type: "Archivo",
-    publish_date: new Date("2023-03-01"),
-    upload_date: new Date("2023-03-05"),
-    course: "Programación",
-    semester: 3,
-    school: "Facultad de Ingeniería",
-    description: "Ejercicios prácticos para aprender programación.",
-    authors: ["Desarrollador A", "Desarrollador B"],
-  },
-];
-
 const ResourcesSection = () => {
   const [resources, setResources] = useState<ResourceReference[]>([]);
   const navigate = useNavigate();
 
   const handleSearch = async (filters: SearchFiltersData) => {
     const res = await fetch("http://localhost:3000/api/user/search",{
-      method: 'GET',
+      method: 'POST',
       headers: {
-        authorization : `Bearer ${localStorage.getItem('access_token')}`
+        "Authorization" : `Bearer ${localStorage.getItem('access_token')}`,
+        "Content-type" : 'application/json'
       },
-      body: JSON.stringify(filters)
+      body: JSON.stringify({
+        name: filters.name,
+        type: filters.type,
+        dateOfPublish: filters.dateOfPublish,
+        school: filters.school,
+        semester: filters.semester,
+        authors: filters.authors,
+        course: filters.course
+      })
     });
+
     if(!res.ok){
       if(res.status == 404){
         alert("No se encontraron recursos con los filtros proporcionados.");
