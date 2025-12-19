@@ -35,4 +35,7 @@ email: admin@admin.com
 password: admin
 ```
 Puede crear nuevos usuarios y aceptar sus solicitudes de colaboración usando aquel superusuario. \
-Actualmente, no existe forma de crear un nuevo administrador si no es con *queries* directas a la base de datos
+Actualmente, no existe forma de crear un nuevo administrador si no es con *queries* directas a la base de datos, accesible usando:
+```bash
+docker exec -it app-database psql -U postgres -d repositorio
+```
