@@ -32,12 +32,12 @@ export class UserEntity{
     @OneToMany(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.responsible))
     responsible_of:ResourceEntity[];
 
-    @OneToMany(()=>AccessRegisterEntity,(registerEntry)=>(registerEntry.accessedBy))
+    @OneToMany(()=>AccessRegisterEntity,(registerEntry)=>(registerEntry.accessedBy),{cascade: true,onDelete: 'CASCADE'})
     hasAccessedTo:AccessRegisterEntity[];
 
-    @OneToMany(()=>UserRequestEntity,(request)=>(request.requestor))
+    @OneToMany(()=>UserRequestEntity,(request)=>(request.requestor),{cascade: true,onDelete: 'CASCADE'})
     collaboratorRequests:UserRequestEntity[]
 
-    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.requestor))
+    @OneToMany(()=>ResourceRequestEntity,(request)=>(request.requestor),{cascade: true,onDelete: 'CASCADE'})
     requestsMade:ResourceRequestEntity[]
 }

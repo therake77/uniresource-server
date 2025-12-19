@@ -47,6 +47,7 @@ export class AdminService{
             }else if(request.request_type === RequestObject.updateRequest){
                 this.databaseService.updateResource(request.object_affecting!.rsrc_id,request.object_affected!.rsrc_id);
             }else if(request.request_type === RequestObject.deleteRequest){
+                console.log(request.object_affected!.rsrc_id);
                 this.databaseService.deleteResource(request.object_affected!.rsrc_id)
             }else{
                 throw new InternalServerErrorException("Error: Request type cannot be recognized")

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, Post, Req, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Token } from "../models/common/token";
 import { AdminService } from "./admin.service";
 import { JwtGuard } from "../auth/guards/jwt.guard";
@@ -18,7 +18,9 @@ export class AdminController{
 
     @Post('approve/:id')
     @UseGuards(JwtGuard)
+    @UsePipes(ValidationPipe)
     async approveRequest(@Req() req:{user: Token}, @Param('id') requestId:number){
+        console.log(requestId)
         return await this.adminService.approveRequest(req.user,requestId);
     }
     

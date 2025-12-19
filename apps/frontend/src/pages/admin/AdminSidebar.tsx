@@ -26,10 +26,7 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
 
   // Opciones del menú lateral
   const menuItems = [
-    { id: "recursos", label: "Ver Recursos" },
-    { id: "usuarios", label: "Ver Usuarios" },
-    { id: "solicitudes", label: "Revisar solicitudes" },
-    { id: "mantenimiento", label: "Mantenimiento" },
+    { id: "solicitudes", label: "Revisar solicitudes" }
   ];
 
   const handleLogout = () => {

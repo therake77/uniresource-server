@@ -27,11 +27,11 @@ export class ResourceRequestEntity extends RequestEntity{
     @JoinColumn({name : "requestor_id"})
     requestor:UserEntity;
 
-    @ManyToOne(()=>ResourceEntity,(rsrEnt)=>(rsrEnt.requestsAsAffected),{nullable: true})
+    @ManyToOne(()=>ResourceEntity,(rsrEnt)=>(rsrEnt.requestsAsAffected),{nullable: true,cascade: true,onDelete: 'SET NULL'})
     @JoinColumn({name: 'obj_affected_id'})
     object_affected?:ResourceEntity;
 
-    @ManyToOne(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.requestsAsAffecting),{nullable: true})
+    @ManyToOne(()=>ResourceEntity,(rsrcEnt)=>(rsrcEnt.requestsAsAffecting),{nullable: true,cascade: true,onDelete: 'SET NULL'})
     @JoinColumn({name: 'obj_affecting_id'})
     object_affecting?:ResourceEntity;
 
@@ -40,7 +40,7 @@ export class ResourceRequestEntity extends RequestEntity{
 @ChildEntity('user_request')
 export class UserRequestEntity extends RequestEntity{
 
-    @ManyToOne(()=>UserEntity,(user)=>(user.collaboratorRequests))
+    @ManyToOne(()=>UserEntity,(user)=>(user.collaboratorRequests),{cascade: true,onDelete: 'SET NULL'})
     @JoinColumn({name:'requestor_id'})
     requestor:UserEntity;
     

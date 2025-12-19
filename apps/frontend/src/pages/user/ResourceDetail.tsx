@@ -46,6 +46,7 @@ const ResourceDetail = () => {
         }
 
         const data = await res.json();
+        console.log(data)
         setResource({
           ...data,
           publish_date: new Date(data.publish_date),
@@ -168,7 +169,7 @@ const ResourceDetail = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Autores</label>
-              <p className="text-lg text-foreground">{resource.authors.join(", ")}</p>
+              <p className="text-lg text-foreground">{resource.authors.join(', ')}</p>
             </div>
           </div>
 
@@ -189,6 +190,11 @@ const ResourceDetail = () => {
 
         {/* PDF Viewer Section */}
         <div className="bg-background border border-border rounded-lg p-6">
+          <style>
+            {`
+              iframe::-webkit-pdf-toolbar { display: none; }
+            `}
+          </style>
           {pdfUrl ? (
             <iframe
               src={pdfUrl}

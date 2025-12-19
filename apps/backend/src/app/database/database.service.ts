@@ -195,13 +195,13 @@ export class DatabaseService{
             return null
         }
 
-        const authorsFound:string[] = await this.resourceRepository.createQueryBuilder('r')
+        const authorsFound: {a_author_name:string}[] = await this.resourceRepository.createQueryBuilder('r')
         .leftJoinAndSelect('r.authors','a')
         .where('r.rsrc_id = :id',{id:rsrcRefFound.rsrc_id})
         .select('a.author_name')
-        .getRawMany<string>();
+        .getRawMany<{a_author_name:string}>();
 
-        
+        console.log(authorsFound);
         const rsrc_ref:ResourceReference = {
             rsrc_id : rsrcRefFound.rsrc_id!,
             name : rsrcRefFound.name,
@@ -212,8 +212,9 @@ export class DatabaseService{
             semester : rsrcRefFound.semester,
             school : rsrcRefFound.school,
             description : rsrcRefFound.description,
-            authors : authorsFound
+            authors : authorsFound.map((row) => (row.a_author_name))
         }
+        console.log(authorsFound);
         return rsrc_ref;
     }
 
@@ -440,8 +441,7 @@ export class DatabaseService{
             throw new NotFoundException("User entity cannot be found");
         }
         
-        const resources:ResourceEntity[] = userEnt.responsible_of;
-        resources.filter((rsrc)=>(rsrc.policy.canBeIndexed === true))
+        const resources:ResourceEntity[] = userEnt.responsible_of.filter((rsrc)=>(rsrc.policy.canBeIndexed === true));
         if(resources.length == 0){
             throw new NotFoundException("Collaborator doesn't have any resources associated with him");
         }
@@ -600,11 +600,13 @@ export class DatabaseService{
         const resource = await this.resourceRepository.findOne({
             where: {rsrc_id : rsrcId}
         })
+        console.log(resource);
         if(!resource){
             throw new NotFoundException("No resource found for deletion")
         }
         await this.resourceRepository.remove(resource)
     }
+    
     async moveFile( source: string, destination: string) {
         try {
             await fs.promises.rename(source, destination);

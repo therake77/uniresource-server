@@ -7,11 +7,11 @@ export class AccessRegisterEntity{
     @PrimaryGeneratedColumn()
     activity_id: number;
 
-    @ManyToOne(()=>(ResourceEntity),(rsrcEnt)=>(rsrcEnt.accessRegisterEntries))
+    @ManyToOne(()=>(ResourceEntity),(rsrcEnt)=>(rsrcEnt.accessRegisterEntries),{onDelete:'CASCADE'})
     @JoinColumn({name:'rsrc_id'})
     resourceAccessed:ResourceEntity;
 
-    @ManyToOne(()=>UserEntity,(user)=>(user.hasAccessedTo))
+    @ManyToOne(()=>UserEntity,(user)=>(user.hasAccessedTo),{onDelete:'CASCADE'})
     @JoinColumn({name : 'user'})
     accessedBy:UserEntity;
 
