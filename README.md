@@ -1,3 +1,9 @@
+## UniResource
+Proyecto de Repositorio académico para la Facultad de Ciencias de la Universidad Nacional de ingeniería
+### Estructura
+La estructura del repo (código) sigue la estructura de repo monolítico de backend-frontend del framework Nx. 
+- Frontend: SPA (React)
+- 
 ### Requisitos:
 - Node.js 
 - npm
