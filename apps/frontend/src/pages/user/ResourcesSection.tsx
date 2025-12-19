@@ -57,20 +57,36 @@ const mockResources: ResourceReference[] = [
 ];
 
 const ResourcesSection = () => {
-  const [resources] = useState(mockResources);
-  const { toast } = useToast();
+  const [resources, setResources] = useState<ResourceReference[]>([]);
   const navigate = useNavigate();
 
-  const handleSearch = (filters: SearchFiltersData) => {
-    console.log("User buscar:", filters);
-    toast({ title: "Búsqueda realizada", description: `Buscando: "${filters.busqueda || "todos"}"` });
+  const handleSearch = async (filters: SearchFiltersData) => {
+    const res = await fetch("http://localhost:3000/api/user/search",{
+      method: 'GET',
+      headers: {
+        authorization : `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify(filters)
+    });
+    if(!res.ok){
+      if(res.status == 404){
+        alert("No se encontraron recursos con los filtros proporcionados.");
+        return;
+      }
+      if(res.status == 401){
+        navigate("/");
+        return;
+      }
+      alert(`Error: ${(await res.json()).message}`);
+      return;
+    }
+    
+    const foundResources = await res.json();
+    setResources(foundResources);
   };
 
   const handleSee = (id: string) => {
-    const resource = resources.find(r => r.rsrc_id.toString() === id);
-    if (resource) {
-      navigate(`/user/resource/${id}`, { state: { resource } });
-    }
+      navigate(`/user/resource/${id}`);
   };
 
   return (

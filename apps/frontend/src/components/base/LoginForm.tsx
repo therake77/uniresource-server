@@ -35,7 +35,12 @@ const LoginForm = () => {
       return;
     }
     const token = await res.text();
-    localStorage.setItem('access_token',token);
+    localStorage.setItem('access_token', token);
+
+    // Decode JWT to get userId (assuming payload has userId)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.userId;
+    localStorage.setItem('user_id', userId.toString());
 
     switch(type){
       case("USER"):{

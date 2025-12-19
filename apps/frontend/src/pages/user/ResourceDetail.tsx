@@ -19,6 +19,16 @@ const ResourceDetail = () => {
   const navigate = useNavigate();
   const resource: ResourceReference = location.state?.resource;
 
+  const handleDownload = async () => {
+    // TODO: implement download
+    alert("Download functionality to be implemented");
+  };
+
+  const handleVisualize = async () => {
+    // TODO: implement visualize
+    alert("Visualize functionality to be implemented");
+  };
+
   if (!resource) {
     return (
       <div className="text-center text-muted-foreground py-12">
@@ -75,6 +85,15 @@ const ResourceDetail = () => {
         <div>
           <label className="text-sm font-medium text-muted-foreground">Descripción</label>
           <p className="text-lg text-foreground mt-1">{resource.description}</p>
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <Button onClick={handleDownload} variant="outline">
+            Download
+          </Button>
+          <Button onClick={handleVisualize} variant="outline">
+            Visualize
+          </Button>
         </div>
       </div>
     </div>

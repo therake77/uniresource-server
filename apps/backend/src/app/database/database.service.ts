@@ -327,7 +327,7 @@ export class DatabaseService{
         }
         qb.select(['resource.rsrc_id AS id', 'metadata.name AS name', 'author.author_name AS author_name'])
         const raw_result:{id: number; name:string; author_name:string }[] =  await qb.getRawMany<{id: number; name:string; author_name:string}>();
-        
+        console.log(raw_result);
         if(raw_result.length == 0){
             throw new NotFoundException();
         }
